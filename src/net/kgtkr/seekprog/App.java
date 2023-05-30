@@ -45,12 +45,8 @@ public class App {
 		env.get("options").setValue("-classpath " + System.getProperty("java.class.path"));
 		VirtualMachine vm = launchingConnector.launch(env);
 
-		ClassPrepareRequest classPrepareRequest = vm.eventRequestManager().createClassPrepareRequest();
-		classPrepareRequest.addClassFilter("");
-		classPrepareRequest.enable();
-
 		MethodEntryRequest mainMethodEntryRequest = vm.eventRequestManager().createMethodEntryRequest();
-		mainMethodEntryRequest.addClassFilter("net.kgtkr.seekprog.HandlePre");
+		mainMethodEntryRequest.addClassFilter(mainClassName);
 		mainMethodEntryRequest.enable();
 
 		String onHandlePde = "net.kgtkr.seekprog.OnHandlePre";
@@ -80,12 +76,25 @@ public class App {
 							gBak.disableCollection();
 							ClassType PGraphicsClassType = (ClassType) vm.classesByName("processing.core.PGraphics")
 									.get(0);
+
 							instance.setValue(
 									instance.referenceType().fieldByName("g"),
 									PGraphicsClassType.newInstance(evt.thread(),
 											PGraphicsClassType.methodsByName("<init>", "()V").get(0),
 											new ArrayList<Value>(),
 											0));
+
+							ClassType ClassClassType = (ClassType) vm.classesByName("java.lang.Class").get(0);
+							ClassClassType.invokeMethod(
+									evt.thread(),
+									ClassClassType.methodsByName("forName", "(Ljava/lang/String;)Ljava/lang/Class;")
+											.get(0),
+									Arrays.asList(vm.mirrorOf("net.kgtkr.seekprog.HandlePre")), 0);
+							ClassClassType.invokeMethod(
+									evt.thread(),
+									ClassClassType.methodsByName("forName", "(Ljava/lang/String;)Ljava/lang/Class;")
+											.get(0),
+									Arrays.asList(vm.mirrorOf("net.kgtkr.seekprog.OnHandlePre")), 0);
 
 							ClassType HandlePreClassType = (ClassType) vm.classesByName("net.kgtkr.seekprog.HandlePre")
 									.get(0);
