@@ -3,6 +3,7 @@ package net.kgtkr.seekprog;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Map;
 
 import com.sun.jdi.Bootstrap;
@@ -36,19 +37,26 @@ import com.sun.jdi.request.StepRequest;
 public class App {
 
 	public static void main(String[] args) throws Exception {
-		Class classToDebug = Class.forName("Pde");
+		String mainClassName = "Pde";
+		Class classToDebug = Class.forName(mainClassName);
 		LaunchingConnector launchingConnector = Bootstrap.virtualMachineManager().defaultConnector();
 		Map<String, Connector.Argument> env = launchingConnector.defaultArguments();
 		env.get("main").setValue(classToDebug.getName());
 		env.get("options").setValue("-classpath " + System.getProperty("java.class.path"));
 		VirtualMachine vm = launchingConnector.launch(env);
+
 		ClassPrepareRequest classPrepareRequest = vm.eventRequestManager().createClassPrepareRequest();
-		classPrepareRequest.addClassFilter(classToDebug.getName());
+		classPrepareRequest.addClassFilter("");
 		classPrepareRequest.enable();
 
-		MethodEntryRequest methodEntryRequest = vm.eventRequestManager().createMethodEntryRequest();
-		methodEntryRequest.addClassFilter(classToDebug.getName());
-		methodEntryRequest.enable();
+		MethodEntryRequest mainMethodEntryRequest = vm.eventRequestManager().createMethodEntryRequest();
+		mainMethodEntryRequest.addClassFilter("net.kgtkr.seekprog.HandlePre");
+		mainMethodEntryRequest.enable();
+
+		String onHandlePde = "net.kgtkr.seekprog.OnHandlePre";
+		MethodEntryRequest onHandlePreMethodEntryRequest = vm.eventRequestManager().createMethodEntryRequest();
+		onHandlePreMethodEntryRequest.addClassFilter(onHandlePde);
+		onHandlePreMethodEntryRequest.enable();
 
 		ObjectReference gBak = null;
 
@@ -57,46 +65,67 @@ public class App {
 		try {
 			while ((eventSet = vm.eventQueue().remove()) != null) {
 				for (Event event : eventSet) {
-					if (event instanceof ClassPrepareEvent) {
-						ClassPrepareEvent evt = (ClassPrepareEvent) event;
-						ClassType classType = (ClassType) evt.referenceType();
-					}
-
+					System.out.println(event);
 					if (event instanceof MethodEntryEvent) {
 						MethodEntryEvent evt = (MethodEntryEvent) event;
-                        if (evt.method().name().equals("draw")) {
+						if (evt.method().declaringType().name().equals(mainClassName)
+								&& evt.method().name().equals("draw")) {
 							StackFrame frame = evt.thread().frame(0);
 							ObjectReference instance = frame.thisObject();
-                            IntegerValue frameCount = (IntegerValue) instance.getValue(instance.referenceType().fieldByName("frameCount"));
 
-							ObjectReference surface = (ObjectReference) instance.getValue(instance.referenceType().fieldByName("surface"));
-							System.out.println(frameCount.intValue());
-							if (frameCount.intValue() == 1) {
-								surface.setValue(surface.referenceType().fieldByName("frameRatePeriod"), vm.mirrorOf(1));
-								gBak = (ObjectReference) instance.getValue(instance.referenceType().fieldByName("g"));
-								gBak.disableCollection();
-								ClassType PGraphicsClassType = (ClassType) vm.classesByName("processing.core.PGraphics").get(0);
-								instance.setValue(
+							ObjectReference surface = (ObjectReference) instance
+									.getValue(instance.referenceType().fieldByName("surface"));
+							surface.setValue(surface.referenceType().fieldByName("frameRatePeriod"), vm.mirrorOf(1));
+							gBak = (ObjectReference) instance.getValue(instance.referenceType().fieldByName("g"));
+							gBak.disableCollection();
+							ClassType PGraphicsClassType = (ClassType) vm.classesByName("processing.core.PGraphics")
+									.get(0);
+							instance.setValue(
 									instance.referenceType().fieldByName("g"),
-									PGraphicsClassType.newInstance(evt.thread(), PGraphicsClassType.methodsByName("<init>", "()V").get(0),
-									new ArrayList<Value>(),
-									0)
-								);
-							}
-							if (frameCount.intValue() == 6000) {
-								surface.setValue(surface.referenceType().fieldByName("frameRatePeriod"), vm.mirrorOf(16666666L));
-								instance.setValue(instance.referenceType().fieldByName("g"), gBak);
-								gBak.enableCollection();
-							}
-                        }
+									PGraphicsClassType.newInstance(evt.thread(),
+											PGraphicsClassType.methodsByName("<init>", "()V").get(0),
+											new ArrayList<Value>(),
+											0));
+
+							ClassType HandlePreClassType = (ClassType) vm.classesByName("net.kgtkr.seekprog.HandlePre")
+									.get(0);
+
+							instance.invokeMethod(
+									evt.thread(),
+									instance.referenceType().methodsByName("registerMethod").get(0),
+									Arrays.asList(
+											vm.mirrorOf("pre"),
+											HandlePreClassType.newInstance(evt.thread(),
+													HandlePreClassType.methodsByName("<init>")
+															.get(0),
+													Arrays.asList(instance, vm.mirrorOf(6000)), 0)),
+									0);
+
+							mainMethodEntryRequest.disable();
+						}
+
+						if (evt.method().declaringType().name().equals(onHandlePde)
+								&& evt.method().name().equals("onTargetFrameCount")) {
+							StackFrame frame = evt.thread().frame(0);
+							ObjectReference instance = (ObjectReference) frame.getArgumentValues().get(0);
+
+							ObjectReference surface = (ObjectReference) instance
+									.getValue(instance.referenceType().fieldByName("surface"));
+
+							surface.setValue(surface.referenceType().fieldByName("frameRatePeriod"),
+									vm.mirrorOf(16666666L));
+							instance.setValue(instance.referenceType().fieldByName("g"), gBak);
+							gBak.enableCollection();
+							onHandlePreMethodEntryRequest.disable();
+						}
 					}
 
-                    if (event instanceof VMDisconnectEvent) {
-                        System.out.println("VM is now disconnected.");
-                        return;
-                    }
+					if (event instanceof VMDisconnectEvent) {
+						System.out.println("VM is now disconnected.");
+						return;
+					}
 				}
-				
+
 				{
 					InputStreamReader reader = new InputStreamReader(vm.process().getInputStream());
 					OutputStreamWriter writer = new OutputStreamWriter(System.out);
@@ -118,7 +147,7 @@ public class App {
 					}
 					writer.flush();
 				}
-				
+
 				vm.resume();
 			}
 		} catch (Exception e) {

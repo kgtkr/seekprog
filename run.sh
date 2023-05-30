@@ -1,12 +1,7 @@
 #!/usr/bin/env bash
 set -eu
 
-javac net/kgtkr/seekprog/App.java
-
-processing-java --sketch=$PWD/Pde --output=$PWD/PdeOut --force --build
-cp PdeOut/*.class .
-
-classpath="."
+classpath=""
 
 if [ "$(uname)" == 'Linux' ]; then
     BASEDIR=$(dirname $(which processing-java))
@@ -33,4 +28,11 @@ if [ "$(uname)" == 'Darwin' ]; then
     done
 fi
 
-java -cp "$classpath" net.kgtkr.seekprog.App
+javac -cp "$classpath" src/net/kgtkr/seekprog/*.java
+
+processing-java --sketch=$PWD/Pde --output=$PWD/PdeOut --force --build
+
+jar cvf seekprog.jar -C src .
+jar cvf PdeOut.jar -C PdeOut .
+
+java -cp "$PWD/seekprog.jar:$PWD/PdeOut.jar:$classpath" net.kgtkr.seekprog.App
