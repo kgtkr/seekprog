@@ -33,16 +33,22 @@ import com.sun.jdi.request.ClassPrepareRequest;
 import com.sun.jdi.request.EventRequestManager;
 import com.sun.jdi.request.MethodEntryRequest;
 import com.sun.jdi.request.StepRequest;
+import processing.mode.java.Commander;
+import java.io.File;
 
 public class App {
 
 	public static void main(String[] args) throws Exception {
-		String mainClassName = "Pde";
-		Class classToDebug = Class.forName(mainClassName);
+		String sketchPath = args[0];
+		String mainClassName = sketchPath.substring(sketchPath.lastIndexOf("/") + 1);
+		String pdeDist = new File("pdedist").getAbsolutePath();
+		Commander.main(
+				new String[] { "--sketch=" + new File(sketchPath).getAbsolutePath(), "--output=" + pdeDist, "--force",
+						"--build" });
 		LaunchingConnector launchingConnector = Bootstrap.virtualMachineManager().defaultConnector();
 		Map<String, Connector.Argument> env = launchingConnector.defaultArguments();
-		env.get("main").setValue(classToDebug.getName());
-		env.get("options").setValue("-classpath " + System.getProperty("java.class.path"));
+		env.get("main").setValue(mainClassName);
+		env.get("options").setValue("-classpath " + System.getProperty("java.class.path") + ":" + pdeDist);
 		VirtualMachine vm = launchingConnector.launch(env);
 
 		MethodEntryRequest mainMethodEntryRequest = vm.eventRequestManager().createMethodEntryRequest();
