@@ -10,6 +10,8 @@ lazy val root = project
 
     run / fork := true,
     connectInput := true,
-
+    Compile / unmanagedJars <++= baseDirectory.map { base =>
+      IO.read(file("cache/classpath.txt")).split(":").map(name => base / name).classpath
+    },
     libraryDependencies += "org.scalameta" %% "munit" % "0.7.29" % Test
   )
