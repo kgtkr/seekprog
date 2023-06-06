@@ -10,7 +10,8 @@ lazy val root = project
 
     run / fork := true,
     connectInput := true,
-    Compile / unmanagedJars ++= Attributed.blankSeq(IO.read(file("cache/classpath.txt")).split(":").map(name => baseDirectory.value / name)),
+    Compile / unmanagedJars ++= Attributed.blankSeq(IO.read(file("cache/classpath.txt")).split(":").map(name => baseDirectory.value / name.trim)),
+    bgCopyClasspath := false,
     libraryDependencies += "org.scalameta" %% "munit" % "0.7.29" % Test,
     assembly / mainClass := Some("net.kgtkr.seekprog.Main"),
     assembly / assemblyExcludedJars := {
