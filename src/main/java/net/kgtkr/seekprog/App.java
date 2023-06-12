@@ -32,7 +32,6 @@ import com.sun.jdi.request.BreakpointRequest;
 import com.sun.jdi.request.ClassPrepareRequest;
 import com.sun.jdi.request.EventRequestManager;
 import com.sun.jdi.request.MethodEntryRequest;
-import com.sun.jdi.request.StepRequest;
 import processing.mode.java.Commander;
 import java.io.File;
 
