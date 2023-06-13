@@ -14,7 +14,10 @@ lazy val root = project
         .map(name => baseDirectory.value / name.trim)
     ),
     bgCopyClasspath := false,
-    libraryDependencies += "org.scalameta" %% "munit" % "0.7.29" % Test,
+    libraryDependencies ++= Seq(
+      "org.scalameta" %% "munit" % "0.7.29" % Test,
+      "org.scalafx" %% "scalafx" % "20.0.0-R31"
+    ),
     assembly / mainClass := Some("net.kgtkr.seekprog.Main"),
     assembly / assemblyExcludedJars := {
       val cp = (assembly / fullClasspath).value
