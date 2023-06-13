@@ -18,13 +18,8 @@ lazy val root = project
       "org.scalameta" %% "munit" % "0.7.29" % Test,
       "org.scalafx" %% "scalafx" % "20.0.0-R31"
     ),
-    assembly / mainClass := Some("net.kgtkr.seekprog.Main"),
-    assembly / assemblyExcludedJars := {
-      val cp = (assembly / fullClasspath).value
-      val base = (assembly / baseDirectory).value.toPath
-      cp.filter(jar => jar.data.toPath.startsWith(base.resolve("cache")))
-    },
     scalacOptions ++= Seq(
       "-no-indent"
-    )
+    ),
+    Compile / mainClass := Some("net.kgtkr.seekprog.main")
   )
