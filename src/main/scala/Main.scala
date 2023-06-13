@@ -35,25 +35,52 @@ import com.sun.jdi.request.MethodEntryRequest;
 import processing.mode.java.Commander;
 import java.io.File;
 import scala.jdk.CollectionConverters._
+import processing.app.Util
+import processing.app.Base
+import processing.app.Platform
+import processing.app.Preferences
+import processing.mode.java.JavaMode
+import processing.app.contrib.ModeContribution
+import processing.app.Sketch
+import processing.mode.java.JavaBuild
 
 @main def main(sketchPath: String): Unit = {
-  val mainClassName = sketchPath.substring(sketchPath.lastIndexOf("/") + 1);
-  val pdeDist = new File("pdedist").getAbsolutePath();
-  Commander.main(
-    Array(
-      "--sketch=" + new File(sketchPath).getAbsolutePath(),
-      "--output=" + pdeDist,
-      "--force",
-      "--build"
-    )
-  );
+  Base.setCommandLine();
+  Platform.init();
+
+  val sketchFolder = new File(sketchPath).getAbsoluteFile();
+  val pdeFile = new File(sketchFolder, sketchFolder.getName() + ".pde");
+  val outputFolder = new File("pdedist").getAbsoluteFile();
+  if (outputFolder.exists()) {
+    Util.removeDir(outputFolder);
+  }
+  outputFolder.mkdirs();
+
+  Preferences.init();
+  Base.locateSketchbookFolder();
+
+  val javaMode =
+    ModeContribution
+      .load(
+        null,
+        Platform.getContentFile("modes/java"),
+        "processing.mode.java.JavaMode"
+      )
+      .getMode()
+      .asInstanceOf[JavaMode];
+
+  val sketch = new Sketch(pdeFile.getAbsolutePath(), javaMode);
+  val build = new JavaBuild(sketch);
+  val srcFolder = new File(outputFolder, "source");
+  val mainClassName = build.build(srcFolder, outputFolder, true);
+
   val launchingConnector = Bootstrap.virtualMachineManager().defaultConnector();
   val env = launchingConnector.defaultArguments();
   env.get("main").setValue(mainClassName);
   env
     .get("options")
     .setValue(
-      "-classpath " + System.getProperty("java.class.path") + ":" + pdeDist
+      "-classpath " + System.getProperty("java.class.path") + ":" + outputFolder
     );
   val vm = launchingConnector.launch(env);
 
