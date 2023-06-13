@@ -89,7 +89,7 @@ import processing.mode.java.JavaBuild
   mainMethodEntryRequest.addClassFilter(mainClassName);
   mainMethodEntryRequest.enable();
 
-  val onHandlePde = "net.kgtkr.seekprog.OnHandlePre";
+  val onHandlePde = classOf[OnHandlePre].getName();
   val onHandlePreMethodEntryRequest =
     vm.eventRequestManager().createMethodEntryRequest();
   onHandlePreMethodEntryRequest.addClassFilter(onHandlePde);
@@ -156,7 +156,7 @@ import processing.mode.java.JavaBuild
                     "(Ljava/lang/String;)Ljava/lang/Class;"
                   )
                   .get(0),
-                Arrays.asList(vm.mirrorOf("net.kgtkr.seekprog.HandlePre")),
+                Arrays.asList(vm.mirrorOf(classOf[HandlePre].getName())),
                 0
               );
               ClassClassType.invokeMethod(
@@ -167,12 +167,12 @@ import processing.mode.java.JavaBuild
                     "(Ljava/lang/String;)Ljava/lang/Class;"
                   )
                   .get(0),
-                Arrays.asList(vm.mirrorOf("net.kgtkr.seekprog.OnHandlePre")),
+                Arrays.asList(vm.mirrorOf(classOf[OnHandlePre].getName())),
                 0
               );
 
               val HandlePreClassType = vm
-                .classesByName("net.kgtkr.seekprog.HandlePre")
+                .classesByName(classOf[HandlePre].getName())
                 .get(0)
                 .asInstanceOf[ClassType];
 
