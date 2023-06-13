@@ -95,8 +95,6 @@ import processing.mode.java.JavaBuild
   onHandlePreMethodEntryRequest.addClassFilter(onHandlePde);
   onHandlePreMethodEntryRequest.enable();
 
-  var gBak: Option[ObjectReference] = None;
-
   try {
     for (
       eventSet <- Iterator
@@ -121,27 +119,6 @@ import processing.mode.java.JavaBuild
               surface.setValue(
                 surface.referenceType().fieldByName("frameRatePeriod"),
                 vm.mirrorOf(1)
-              );
-              gBak = {
-                val g = instance
-                  .getValue(instance.referenceType().fieldByName("g"))
-                  .asInstanceOf[ObjectReference];
-                g.disableCollection();
-                Some(g)
-              };
-              val PGraphicsClassType = vm
-                .classesByName("processing.core.PGraphics")
-                .get(0)
-                .asInstanceOf[ClassType];
-
-              instance.setValue(
-                instance.referenceType().fieldByName("g"),
-                PGraphicsClassType.newInstance(
-                  evt.thread(),
-                  PGraphicsClassType.methodsByName("<init>", "()V").get(0),
-                  ArrayList(),
-                  0
-                )
               );
 
               val ClassClassType = vm
@@ -216,12 +193,6 @@ import processing.mode.java.JavaBuild
                 surface.referenceType().fieldByName("frameRatePeriod"),
                 vm.mirrorOf(16666666L)
               );
-              val g = gBak.get;
-              instance.setValue(
-                instance.referenceType().fieldByName("g"),
-                g
-              );
-              g.enableCollection();
               onHandlePreMethodEntryRequest.disable();
             }
           }
