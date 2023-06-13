@@ -25,6 +25,7 @@ import com.sun.jdi.event.Event;
 import com.sun.jdi.event.EventSet;
 import com.sun.jdi.event.ExceptionEvent;
 import com.sun.jdi.event.MethodEntryEvent;
+import com.sun.jdi.event.MethodExitEvent;
 import com.sun.jdi.event.StepEvent;
 import com.sun.jdi.event.VMDeathEvent;
 import com.sun.jdi.event.VMDisconnectEvent;
@@ -84,10 +85,10 @@ import processing.mode.java.JavaBuild
     );
   val vm = launchingConnector.launch(env);
 
-  val mainMethodEntryRequest =
-    vm.eventRequestManager().createMethodEntryRequest();
-  mainMethodEntryRequest.addClassFilter(mainClassName);
-  mainMethodEntryRequest.enable();
+  val mainMethodExitRequest =
+    vm.eventRequestManager().createMethodExitRequest();
+  mainMethodExitRequest.addClassFilter(mainClassName);
+  mainMethodExitRequest.enable();
 
   val onHandlePde = classOf[runtime.OnHandlePre].getName();
   val onHandlePreMethodEntryRequest =
@@ -105,10 +106,10 @@ import processing.mode.java.JavaBuild
       for (evt <- eventSet.nn.asScala) {
         println(evt);
         evt match {
-          case evt: MethodEntryEvent => {
+          case evt: MethodExitEvent => {
             if (
               evt.method().declaringType().name().equals(mainClassName)
-              && evt.method().name().equals("draw")
+              && evt.method().name().equals("setup")
             ) {
               val frame = evt.thread().frame(0);
               val instance = frame.thisObject();
@@ -174,9 +175,10 @@ import processing.mode.java.JavaBuild
                 0
               );
 
-              mainMethodEntryRequest.disable();
+              mainMethodExitRequest.disable();
             }
-
+          }
+          case evt: MethodEntryEvent => {
             if (
               evt.method().declaringType().name().equals(onHandlePde)
               && evt.method().name().equals("onTargetFrameCount")
