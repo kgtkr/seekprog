@@ -89,7 +89,7 @@ import processing.mode.java.JavaBuild
   mainMethodEntryRequest.addClassFilter(mainClassName);
   mainMethodEntryRequest.enable();
 
-  val onHandlePde = classOf[OnHandlePre].getName();
+  val onHandlePde = classOf[runtime.OnHandlePre].getName();
   val onHandlePreMethodEntryRequest =
     vm.eventRequestManager().createMethodEntryRequest();
   onHandlePreMethodEntryRequest.addClassFilter(onHandlePde);
@@ -156,7 +156,9 @@ import processing.mode.java.JavaBuild
                     "(Ljava/lang/String;)Ljava/lang/Class;"
                   )
                   .get(0),
-                Arrays.asList(vm.mirrorOf(classOf[HandlePre].getName())),
+                Arrays.asList(
+                  vm.mirrorOf(classOf[runtime.HandlePre].getName())
+                ),
                 0
               );
               ClassClassType.invokeMethod(
@@ -167,12 +169,14 @@ import processing.mode.java.JavaBuild
                     "(Ljava/lang/String;)Ljava/lang/Class;"
                   )
                   .get(0),
-                Arrays.asList(vm.mirrorOf(classOf[OnHandlePre].getName())),
+                Arrays.asList(
+                  vm.mirrorOf(classOf[runtime.OnHandlePre].getName())
+                ),
                 0
               );
 
               val HandlePreClassType = vm
-                .classesByName(classOf[HandlePre].getName())
+                .classesByName(classOf[runtime.HandlePre].getName())
                 .get(0)
                 .asInstanceOf[ClassType];
 

@@ -1,4 +1,4 @@
-package net.kgtkr.seekprog;
+package net.kgtkr.seekprog.runtime;
 
 import processing.core.PApplet;
 
