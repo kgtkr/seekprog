@@ -5,12 +5,14 @@ lazy val root = project
   .settings(
     name := "seekprog",
     version := "0.1.0-SNAPSHOT",
-
     scalaVersion := scala3Version,
-
     run / fork := true,
     connectInput := true,
-    Compile / unmanagedJars ++= Attributed.blankSeq(IO.read(file("cache/classpath.txt")).split(":").map(name => baseDirectory.value / name.trim)),
+    Compile / unmanagedJars ++= Attributed.blankSeq(
+      IO.read(file("cache/classpath.txt"))
+        .split(":")
+        .map(name => baseDirectory.value / name.trim)
+    ),
     bgCopyClasspath := false,
     libraryDependencies += "org.scalameta" %% "munit" % "0.7.29" % Test,
     assembly / mainClass := Some("net.kgtkr.seekprog.Main"),
@@ -18,5 +20,8 @@ lazy val root = project
       val cp = (assembly / fullClasspath).value
       val base = (assembly / baseDirectory).value.toPath
       cp.filter(jar => jar.data.toPath.startsWith(base.resolve("cache")))
-    }
+    },
+    scalacOptions ++= Seq(
+      "-no-indent"
+    )
   )
