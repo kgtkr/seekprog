@@ -21,5 +21,5 @@ lazy val root = project
     scalacOptions ++= Seq(
       "-no-indent"
     ),
-    Compile / mainClass := Some("net.kgtkr.seekprog.main")
+    Compile / mainClass := Some("net.kgtkr.seekprog.Main")
   )
