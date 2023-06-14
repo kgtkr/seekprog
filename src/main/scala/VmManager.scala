@@ -44,12 +44,13 @@ import processing.mode.java.JavaMode
 import processing.app.contrib.ModeContribution
 import processing.app.Sketch
 import processing.mode.java.JavaBuild
+import java.util.concurrent.LinkedTransferQueue
 
-class Seekprog {
-  def run(sketchPath: String) = {
-    Base.setCommandLine();
-    Platform.init();
-
+class VmManager(
+    val runner: Runner
+) {
+  def run() = {
+    val sketchPath = runner.sketchPath;
     val sketchFolder = new File(sketchPath).getAbsoluteFile();
     val pdeFile = new File(sketchFolder, sketchFolder.getName() + ".pde");
     val outputFolder = new File("pdedist").getAbsoluteFile();
@@ -175,7 +176,7 @@ class Seekprog {
                       HandlePreClassType
                         .methodsByName("<init>")
                         .get(0),
-                      Arrays.asList(instance, vm.mirrorOf(6000)),
+                      Arrays.asList(instance, vm.mirrorOf(60 * 30)),
                       0
                     )
                   ),

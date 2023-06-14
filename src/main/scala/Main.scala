@@ -9,13 +9,14 @@ import scalafx.scene.paint.Color._
 import scalafx.scene.paint._
 import scalafx.scene.text.Text
 import scalafx.Includes._
+import scalafx.scene.control.Slider
 
 object Main extends JFXApp3 {
   override def start(): Unit = {
     val sketchPath = this.parameters.getUnnamed.get(0)
     val thread = new Thread(new Runnable {
       override def run(): Unit = {
-        new Seekprog().run(sketchPath)
+        new Runner(sketchPath).run()
       }
     })
     thread.start()
@@ -43,7 +44,8 @@ object Main extends JFXApp3 {
                 radius = 15
                 spread = 0.25
               }
-            }
+            },
+            new Slider(0, 100, 100) {}
           )
         }
       }
