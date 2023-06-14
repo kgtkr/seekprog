@@ -59,9 +59,6 @@ class VmManager(
     }
     outputFolder.mkdirs();
 
-    Preferences.init();
-    Base.locateSketchbookFolder();
-
     val javaMode =
       ModeContribution
         .load(

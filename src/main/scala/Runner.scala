@@ -56,6 +56,8 @@ class Runner(val sketchPath: String) {
   def run() = {
     Base.setCommandLine();
     Platform.init();
+    Preferences.init();
+    Base.locateSketchbookFolder();
 
     new VmManager(this).run();
   }
