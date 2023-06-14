@@ -174,7 +174,10 @@ class VmManager(
                       HandlePreClassType
                         .methodsByName("<init>")
                         .get(0),
-                      Arrays.asList(instance, vm.mirrorOf(60 * 30)),
+                      Arrays.asList(
+                        instance,
+                        vm.mirrorOf((60 * runner.location).toInt)
+                      ),
                       0
                     )
                   ),
@@ -217,6 +220,7 @@ class VmManager(
                     .asInstanceOf[DoubleValue]
                     .value();
 
+                runner.location = location;
                 runner.maxLocation = Math.max(runner.maxLocation, location);
                 runner.eventQueue.add(
                   RunnerEvent.UpdateLocation(location, runner.maxLocation)
@@ -267,8 +271,9 @@ class VmManager(
             .takeWhile(_ != null)
         ) {
           cmd match {
-            case RunnerCmd.ReloadSketch => {
+            case RunnerCmd.ReloadSketch(location) => {
               println("Reloading sketch...");
+              location.foreach { location => runner.location = location }
               vm.exit(0);
             }
           }

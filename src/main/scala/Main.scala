@@ -15,6 +15,8 @@ import java.nio.file.Paths
 import java.nio.file.StandardWatchEventKinds
 import scala.jdk.CollectionConverters._
 import java.nio.file.Path
+import java.nio.file.WatchEvent
+import com.sun.nio.file.SensitivityWatchEventModifier
 
 object Main extends JFXApp3 {
   override def start(): Unit = {
@@ -32,9 +34,12 @@ object Main extends JFXApp3 {
         val path = Paths.get(sketchPath);
         path.register(
           watcher,
-          StandardWatchEventKinds.ENTRY_CREATE,
-          StandardWatchEventKinds.ENTRY_DELETE,
-          StandardWatchEventKinds.ENTRY_MODIFY
+          Array[WatchEvent.Kind[?]](
+            StandardWatchEventKinds.ENTRY_CREATE,
+            StandardWatchEventKinds.ENTRY_DELETE,
+            StandardWatchEventKinds.ENTRY_MODIFY
+          ),
+          SensitivityWatchEventModifier.HIGH
         );
 
         while (true) {
@@ -44,7 +49,7 @@ object Main extends JFXApp3 {
             event.context() match {
               case filename: Path => {
                 if (filename.toString().endsWith(".pde")) {
-                  runner.cmdQueue.add(RunnerCmd.ReloadSketch)
+                  runner.cmdQueue.add(RunnerCmd.ReloadSketch())
                 }
               }
               case evt => {
@@ -67,24 +72,6 @@ object Main extends JFXApp3 {
         content = new HBox {
           padding = Insets(50, 80, 50, 80)
           children = Seq(
-            new Text {
-              text = "Scala"
-              style = "-fx-font: normal bold 100pt sans-serif"
-              fill = new LinearGradient(endX = 0, stops = Stops(Red, DarkRed))
-            },
-            new Text {
-              text <== when(hover) choose "Green" otherwise "Red"
-              style = "-fx-font: italic bold 100pt sans-serif"
-              fill = new LinearGradient(
-                endX = 0,
-                stops = Stops(White, DarkGray)
-              )
-              effect = new DropShadow {
-                color = DarkGray
-                radius = 15
-                spread = 0.25
-              }
-            },
             new Slider(0, 100, 100) {}
           )
         }

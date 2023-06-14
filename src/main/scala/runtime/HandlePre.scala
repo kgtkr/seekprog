@@ -13,7 +13,7 @@ class HandlePre(applet: PApplet, targetFrameCount: Int) {
       this.applet.g = new PGraphics();
     }
 
-    if (this.applet.frameCount == this.targetFrameCount) {
+    if (!this.onTarget && this.applet.frameCount >= this.targetFrameCount) {
       this.applet.g.dispose();
       this.applet.g = this.gBak.get;
       this.onTarget = true;

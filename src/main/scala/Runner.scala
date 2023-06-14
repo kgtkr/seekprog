@@ -47,7 +47,7 @@ import processing.mode.java.JavaBuild
 import java.util.concurrent.LinkedTransferQueue
 
 enum RunnerCmd {
-  case ReloadSketch;
+  case ReloadSketch(location: Option[Double] = None);
 }
 
 enum RunnerEvent {
@@ -58,6 +58,7 @@ class Runner(val sketchPath: String) {
   val cmdQueue = new LinkedTransferQueue[RunnerCmd]();
   val eventQueue = new LinkedTransferQueue[RunnerEvent]();
 
+  var location = 0.0;
   var maxLocation = 0.0;
 
   def run() = {
