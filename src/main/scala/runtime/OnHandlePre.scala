@@ -6,4 +6,8 @@ class OnHandlePre {
   def onTargetFrameCount(applet: PApplet) = {
     println("onTargetFrameCount");
   }
+
+  def onUpdateLocation(time: Double) = {
+    println("onUpdateLocation: " + time);
+  }
 }

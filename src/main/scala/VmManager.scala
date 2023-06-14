@@ -12,6 +12,7 @@ import com.sun.jdi.IntegerValue;
 import com.sun.jdi.LocalVariable;
 import com.sun.jdi.Location;
 import com.sun.jdi.ObjectReference;
+import com.sun.jdi.DoubleValue;
 import com.sun.jdi.PathSearchingVirtualMachine;
 import com.sun.jdi.StackFrame;
 import com.sun.jdi.VMDisconnectedException;
@@ -203,7 +204,23 @@ class VmManager(
                   surface.referenceType().fieldByName("frameRatePeriod"),
                   vm.mirrorOf(16666666L)
                 );
-                onHandlePreMethodEntryRequest.disable();
+              }
+              if (
+                evt.method().declaringType().name().equals(onHandlePde)
+                && evt.method().name().equals("onUpdateLocation")
+              ) {
+                val frame = evt.thread().frame(0);
+                val location =
+                  frame
+                    .getArgumentValues()
+                    .get(0)
+                    .asInstanceOf[DoubleValue]
+                    .value();
+
+                runner.maxLocation = Math.max(runner.maxLocation, location);
+                runner.eventQueue.add(
+                  RunnerEvent.UpdateLocation(location, runner.maxLocation)
+                )
               }
             }
             case _ => {}
@@ -251,7 +268,8 @@ class VmManager(
         ) {
           cmd match {
             case RunnerCmd.ReloadSketch => {
-              vm.dispose();
+              println("Reloading sketch...");
+              vm.exit(0);
             }
           }
         }

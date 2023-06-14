@@ -58,6 +58,8 @@ class Runner(val sketchPath: String) {
   val cmdQueue = new LinkedTransferQueue[RunnerCmd]();
   val eventQueue = new LinkedTransferQueue[RunnerEvent]();
 
+  var maxLocation = 0.0;
+
   def run() = {
     Base.setCommandLine();
     Platform.init();
