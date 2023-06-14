@@ -46,12 +46,17 @@ import processing.app.Sketch
 import processing.mode.java.JavaBuild
 import java.util.concurrent.LinkedTransferQueue
 
-enum RunnerMsg {
-  case Nop;
+enum RunnerCmd {
+  case ReloadSketch;
+}
+
+enum RunnerEvent {
+  case UpdateLocation(value: Double, max: Double);
 }
 
 class Runner(val sketchPath: String) {
-  val queue = new LinkedTransferQueue[RunnerMsg]();
+  val cmdQueue = new LinkedTransferQueue[RunnerCmd]();
+  val eventQueue = new LinkedTransferQueue[RunnerEvent]();
 
   def run() = {
     Base.setCommandLine();
@@ -59,6 +64,8 @@ class Runner(val sketchPath: String) {
     Preferences.init();
     Base.locateSketchbookFolder();
 
-    new VmManager(this).run();
+    while (true) {
+      new VmManager(this).run();
+    }
   }
 }

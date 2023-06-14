@@ -10,16 +10,56 @@ import scalafx.scene.paint._
 import scalafx.scene.text.Text
 import scalafx.Includes._
 import scalafx.scene.control.Slider
+import java.nio.file.FileSystems
+import java.nio.file.Paths
+import java.nio.file.StandardWatchEventKinds
+import scala.jdk.CollectionConverters._
+import java.nio.file.Path
 
 object Main extends JFXApp3 {
   override def start(): Unit = {
     val sketchPath = this.parameters.getUnnamed.get(0)
-    val thread = new Thread(new Runnable {
+    val runner = new Runner(sketchPath)
+    new Thread(new Runnable {
       override def run(): Unit = {
-        new Runner(sketchPath).run()
+        runner.run()
       }
-    })
-    thread.start()
+    }).start()
+
+    new Thread(new Runnable {
+      override def run(): Unit = {
+        val watcher = FileSystems.getDefault().newWatchService();
+        val path = Paths.get(sketchPath);
+        path.register(
+          watcher,
+          StandardWatchEventKinds.ENTRY_CREATE,
+          StandardWatchEventKinds.ENTRY_DELETE,
+          StandardWatchEventKinds.ENTRY_MODIFY
+        );
+
+        while (true) {
+          val watchKey = watcher.take();
+
+          for (event <- watchKey.pollEvents().asScala) {
+            event.context() match {
+              case filename: Path => {
+                if (filename.toString().endsWith(".pde")) {
+                  runner.cmdQueue.add(RunnerCmd.ReloadSketch)
+                }
+              }
+              case evt => {
+                println(s"unknown event: ${evt}")
+              }
+            }
+          }
+
+          if (!watchKey.reset()) {
+            throw new RuntimeException("watchKey reset failed")
+          }
+        }
+      }
+    }).start()
+
     stage = new JFXApp3.PrimaryStage {
       title = "Seekprog"
       scene = new Scene {

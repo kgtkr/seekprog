@@ -206,9 +206,6 @@ class VmManager(
                 onHandlePreMethodEntryRequest.disable();
               }
             }
-            case evt: VMDisconnectEvent => {
-              println("VM is now disconnected.");
-            }
             case _ => {}
           }
 
@@ -244,6 +241,19 @@ class VmManager(
             writer.write(buf, 0, size);
           }
           writer.flush();
+        }
+
+        for (
+          cmd <- Iterator
+            .from(0)
+            .map(_ => runner.cmdQueue.poll())
+            .takeWhile(_ != null)
+        ) {
+          cmd match {
+            case RunnerCmd.ReloadSketch => {
+              vm.dispose();
+            }
+          }
         }
 
         vm.resume();
