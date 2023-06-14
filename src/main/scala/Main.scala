@@ -17,6 +17,7 @@ import scala.jdk.CollectionConverters._
 import java.nio.file.Path
 import java.nio.file.WatchEvent
 import com.sun.nio.file.SensitivityWatchEventModifier
+import scalafx.application.Platform
 
 object Main extends JFXApp3 {
   override def start(): Unit = {
@@ -71,8 +72,40 @@ object Main extends JFXApp3 {
         fill = Color.rgb(38, 38, 38)
         content = new HBox {
           padding = Insets(50, 80, 50, 80)
+          val slider = new Slider(0, 0.1, 0.1) {
+            valueChanging.addListener({ (_, _, changing) =>
+              if (!changing) {
+                runner.cmdQueue.add(
+                  RunnerCmd.ReloadSketch(Some(value.value))
+                );
+              }
+              ()
+            })
+          };
+          val text = new Text {
+            style = "-fx-font: normal bold 25pt sans-serif"
+            fill = White
+          }
+          new Thread {
+            override def run(): Unit = {
+              while (true) {
+                val event = runner.eventQueue.take()
+                event match {
+                  case RunnerEvent.UpdateLocation(value2, max2) => {
+                    Platform.runLater {
+                      slider.value = value2
+                      slider.max = max2
+                      text.text = f"${value2.toInt}/${max2.toInt}"
+                    }
+                  }
+                  case _ => {}
+                }
+              }
+            }
+          }.start()
           children = Seq(
-            new Slider(0, 100, 100) {}
+            slider,
+            text
           )
         }
       }
