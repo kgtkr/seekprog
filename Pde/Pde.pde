@@ -9,6 +9,9 @@ void setup() {
 
 void draw() {
   background(255);
+  if (frameCount % 10 == 0) {
+    println(frameRate);
+  }
   x += dx;
   y += dy;
   dy += 0.1;

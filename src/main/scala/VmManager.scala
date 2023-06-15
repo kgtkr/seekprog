@@ -9,6 +9,7 @@ import java.util.Map;
 import com.sun.jdi.Bootstrap;
 import com.sun.jdi.ClassType;
 import com.sun.jdi.IntegerValue;
+import com.sun.jdi.LongValue;
 import com.sun.jdi.LocalVariable;
 import com.sun.jdi.Location;
 import com.sun.jdi.ObjectReference;
@@ -74,6 +75,7 @@ class VmManager(
     val build = new JavaBuild(sketch);
     val srcFolder = new File(outputFolder, "source");
     val mainClassName = build.build(srcFolder, outputFolder, true);
+    val javaLibraryPath = build.getJavaLibraryPath();
 
     val launchingConnector =
       Bootstrap.virtualMachineManager().defaultConnector();
@@ -84,7 +86,9 @@ class VmManager(
       .setValue(
         "-classpath " + System.getProperty(
           "java.class.path"
-        ) + ":" + outputFolder
+        ) + ":" + outputFolder + " -Djava.library.path=" + System.getProperty(
+          "java.library.path"
+        ) + ":" + javaLibraryPath + " -Djna.nosys=true"
       );
     val vm = launchingConnector.launch(env);
 
