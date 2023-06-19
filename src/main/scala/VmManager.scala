@@ -101,7 +101,6 @@ class VmManager(
     val onHandlePreMethodEntryRequest =
       vm.eventRequestManager().createMethodEntryRequest();
     onHandlePreMethodEntryRequest.addClassFilter(onHandlePde);
-    onHandlePreMethodEntryRequest.enable();
 
     try {
       for (
@@ -120,14 +119,6 @@ class VmManager(
               ) {
                 val frame = evt.thread().frame(0);
                 val instance = frame.thisObject();
-
-                val surface = instance
-                  .getValue(instance.referenceType().fieldByName("surface"))
-                  .asInstanceOf[ObjectReference];
-                surface.setValue(
-                  surface.referenceType().fieldByName("frameRatePeriod"),
-                  vm.mirrorOf(1)
-                );
 
                 val ClassClassType = vm
                   .classesByName("java.lang.Class")
@@ -165,53 +156,23 @@ class VmManager(
                   .get(0)
                   .asInstanceOf[ClassType];
 
-                instance.invokeMethod(
+                HandlePreClassType.invokeMethod(
                   evt.thread(),
-                  instance
-                    .referenceType()
-                    .methodsByName("registerMethod")
+                  HandlePreClassType
+                    .methodsByName("apply")
                     .get(0),
                   Arrays.asList(
-                    vm.mirrorOf("pre"),
-                    HandlePreClassType.newInstance(
-                      evt.thread(),
-                      HandlePreClassType
-                        .methodsByName("<init>")
-                        .get(0),
-                      Arrays.asList(
-                        instance,
-                        vm.mirrorOf((60 * runner.location).toInt)
-                      ),
-                      0
-                    )
+                    instance,
+                    vm.mirrorOf((60 * runner.location).toInt)
                   ),
                   0
                 );
 
                 mainMethodExitRequest.disable();
+                onHandlePreMethodEntryRequest.enable();
               }
             }
             case evt: MethodEntryEvent => {
-              if (
-                evt.method().declaringType().name().equals(onHandlePde)
-                && evt.method().name().equals("onTargetFrameCount")
-              ) {
-                val frame = evt.thread().frame(0);
-                val instance =
-                  frame
-                    .getArgumentValues()
-                    .get(0)
-                    .asInstanceOf[ObjectReference];
-
-                val surface = instance
-                  .getValue(instance.referenceType().fieldByName("surface"))
-                  .asInstanceOf[ObjectReference]
-
-                surface.setValue(
-                  surface.referenceType().fieldByName("frameRatePeriod"),
-                  vm.mirrorOf(16666666L)
-                );
-              }
               if (
                 evt.method().declaringType().name().equals(onHandlePde)
                 && evt.method().name().equals("onUpdateLocation")
