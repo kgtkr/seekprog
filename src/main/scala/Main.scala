@@ -18,6 +18,7 @@ import java.nio.file.Path
 import java.nio.file.WatchEvent
 import com.sun.nio.file.SensitivityWatchEventModifier
 import scalafx.application.Platform
+import scalafx.beans.binding.Bindings
 
 object Main extends JFXApp3 {
   override def start(): Unit = {
@@ -103,10 +104,12 @@ object Main extends JFXApp3 {
             new Text {
               style = "-fx-font: normal bold 10pt sans-serif"
               fill = White
-              text <== (for {
-                max <- slider.max
-                value <- slider.value
-              } yield f"${value.intValue()}%d秒/ ${max.intValue()}%d秒")
+              text <== Bindings.createStringBinding(
+                () =>
+                  f"${slider.value.intValue()}%d秒/ ${slider.max.intValue()}%d秒",
+                slider.value,
+                slider.max
+              )
             }
           )
         }
