@@ -102,6 +102,8 @@ class VmManager(
       vm.eventRequestManager().createMethodEntryRequest();
     onHandlePreMethodEntryRequest.addClassFilter(onHandlePde);
 
+    runner.eventQueue.add(RunnerEvent.StartSketch());
+
     try {
       for (
         eventSet <- Iterator

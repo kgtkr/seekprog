@@ -30,6 +30,8 @@ object Main extends JFXApp3 {
       }
     }).start()
 
+    var loading = true
+
     new Thread(new Runnable {
       override def run(): Unit = {
         val watcher = FileSystems.getDefault().newWatchService();
@@ -51,7 +53,13 @@ object Main extends JFXApp3 {
             event.context() match {
               case filename: Path => {
                 if (filename.toString().endsWith(".pde")) {
-                  runner.cmdQueue.add(RunnerCmd.ReloadSketch())
+                  Platform.runLater {
+                    if (!loading) {
+                      loading = true
+                      runner.cmdQueue.add(RunnerCmd.ReloadSketch())
+                    }
+
+                  }
                 }
               }
               case evt => {
@@ -75,7 +83,8 @@ object Main extends JFXApp3 {
           padding = Insets(50, 80, 50, 80)
           val slider = new Slider(0, 0, 0) {
             valueChanging.addListener({ (_, _, changing) =>
-              if (!changing) {
+              if (!changing && !loading) {
+                loading = true
                 runner.cmdQueue.add(
                   RunnerCmd.ReloadSketch(Some(value.value))
                 );
@@ -87,15 +96,20 @@ object Main extends JFXApp3 {
             override def run(): Unit = {
               while (true) {
                 val event = runner.eventQueue.take()
-                event match {
-                  case RunnerEvent.UpdateLocation(value2, max2) => {
-                    Platform.runLater {
-                      slider.max = max2
-                      slider.value = value2
+                Platform.runLater {
+                  event match {
+                    case RunnerEvent.UpdateLocation(value2, max2) => {
+                      if (!loading) {
+                        slider.max = max2
+                        slider.value = value2
+                      }
+                    }
+                    case RunnerEvent.StartSketch() => {
+                      loading = false
                     }
                   }
-                  case _ => {}
                 }
+
               }
             }
           }.start()

@@ -52,6 +52,7 @@ enum RunnerCmd {
 
 enum RunnerEvent {
   case UpdateLocation(value: Double, max: Double);
+  case StartSketch();
 }
 
 class Runner(val sketchPath: String) {
