@@ -86,27 +86,25 @@ object Main extends JFXApp3 {
               ()
             })
           };
-          new Thread {
-            override def run(): Unit = {
-              while (true) {
-                val event = runner.eventQueue.take()
-                Platform.runLater {
-                  event match {
-                    case RunnerEvent.UpdateLocation(value2, max2) => {
-                      if (!loading) {
-                        slider.max = max2
-                        slider.value = value2
-                      }
-                    }
-                    case RunnerEvent.StartSketch() => {
-                      loading = false
+          new Thread(() => {
+            while (true) {
+              val event = runner.eventQueue.take()
+              Platform.runLater {
+                event match {
+                  case RunnerEvent.UpdateLocation(value2, max2) => {
+                    if (!loading) {
+                      slider.max = max2
+                      slider.value = value2
                     }
                   }
+                  case RunnerEvent.StartSketch() => {
+                    loading = false
+                  }
                 }
-
               }
+
             }
-          }.start()
+          }).start()
           children = Seq(
             slider,
             new Text {
