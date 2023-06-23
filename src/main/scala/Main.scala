@@ -24,53 +24,47 @@ object Main extends JFXApp3 {
   override def start(): Unit = {
     val sketchPath = this.parameters.getUnnamed.get(0)
     val runner = new Runner(sketchPath)
-    new Thread(new Runnable {
-      override def run(): Unit = {
-        runner.run()
-      }
-    }).start()
+    new Thread(() => runner.run()).start()
 
     var loading = true
 
-    new Thread(new Runnable {
-      override def run(): Unit = {
-        val watcher = FileSystems.getDefault().newWatchService();
-        val path = Paths.get(sketchPath);
-        path.register(
-          watcher,
-          Array[WatchEvent.Kind[?]](
-            StandardWatchEventKinds.ENTRY_CREATE,
-            StandardWatchEventKinds.ENTRY_DELETE,
-            StandardWatchEventKinds.ENTRY_MODIFY
-          ),
-          SensitivityWatchEventModifier.HIGH
-        );
+    new Thread(() => {
+      val watcher = FileSystems.getDefault().newWatchService();
+      val path = Paths.get(sketchPath);
+      path.register(
+        watcher,
+        Array[WatchEvent.Kind[?]](
+          StandardWatchEventKinds.ENTRY_CREATE,
+          StandardWatchEventKinds.ENTRY_DELETE,
+          StandardWatchEventKinds.ENTRY_MODIFY
+        ),
+        SensitivityWatchEventModifier.HIGH
+      );
 
-        while (true) {
-          val watchKey = watcher.take();
+      while (true) {
+        val watchKey = watcher.take();
 
-          for (event <- watchKey.pollEvents().asScala) {
-            event.context() match {
-              case filename: Path => {
-                if (filename.toString().endsWith(".pde")) {
-                  Platform.runLater {
-                    if (!loading) {
-                      loading = true
-                      runner.cmdQueue.add(RunnerCmd.ReloadSketch())
-                    }
-
+        for (event <- watchKey.pollEvents().asScala) {
+          event.context() match {
+            case filename: Path => {
+              if (filename.toString().endsWith(".pde")) {
+                Platform.runLater {
+                  if (!loading) {
+                    loading = true
+                    runner.cmdQueue.add(RunnerCmd.ReloadSketch())
                   }
+
                 }
               }
-              case evt => {
-                println(s"unknown event: ${evt}")
-              }
+            }
+            case evt => {
+              println(s"unknown event: ${evt}")
             }
           }
+        }
 
-          if (!watchKey.reset()) {
-            throw new RuntimeException("watchKey reset failed")
-          }
+        if (!watchKey.reset()) {
+          throw new RuntimeException("watchKey reset failed")
         }
       }
     }).start()
