@@ -47,9 +47,15 @@ import processing.app.contrib.ModeContribution
 import processing.app.Sketch
 import processing.mode.java.JavaBuild
 import java.util.concurrent.LinkedTransferQueue
+import java.nio.channels.ServerSocketChannel
+import java.io.BufferedReader
+import net.kgtkr.seekprog.runtime.RuntimeEvent
+import java.nio.charset.StandardCharsets
+import java.nio.ByteBuffer
 
 class VmManager(
-    val runner: Runner
+    val runner: Runner,
+    val ssc: ServerSocketChannel
 ) {
   def run() = {
     val sketchPath = runner.sketchPath;
@@ -88,7 +94,8 @@ class VmManager(
           "java.class.path"
         ) + ":" + outputFolder + " -Djava.library.path=" + System.getProperty(
           "java.library.path"
-        ) + ":" + javaLibraryPath + " -Djna.nosys=true"
+        ) + ":" + javaLibraryPath + " -Djna.nosys=true "
+          + "-Dseekprog.sock=" + runner.sockPath.toString()
       );
     val vm = launchingConnector.launch(env);
 
@@ -97,12 +104,30 @@ class VmManager(
     mainMethodExitRequest.addClassFilter(mainClassName);
     mainMethodExitRequest.enable();
 
-    val onHandlePde = classOf[runtime.OnHandlePre].getName();
-    val onHandlePreMethodEntryRequest =
-      vm.eventRequestManager().createMethodEntryRequest();
-    onHandlePreMethodEntryRequest.addClassFilter(onHandlePde);
-
     runner.eventQueue.add(RunnerEvent.StartSketch());
+
+    new Thread(() => {
+      val sc = ssc.accept();
+      val buf = ByteBuffer.allocate(1024)
+
+      while (sc.read(buf) != -1) {
+        buf.flip();
+        RuntimeEvent.fromBytes(buf) match {
+          case RuntimeEvent.OnTargetFrameCount => {}
+          case RuntimeEvent.OnUpdateLocation(location) => {
+            // TODO: スレッドセーフではない
+            runner.location = location;
+            runner.maxLocation = Math.max(runner.maxLocation, location);
+            runner.eventQueue.add(
+              RunnerEvent.UpdateLocation(location, runner.maxLocation)
+            )
+          }
+        }
+
+        buf.clear()
+      }
+      ()
+    }).start()
 
     try {
       for (
@@ -139,19 +164,6 @@ class VmManager(
                   ),
                   0
                 );
-                ClassClassType.invokeMethod(
-                  evt.thread(),
-                  ClassClassType
-                    .methodsByName(
-                      "forName",
-                      "(Ljava/lang/String;)Ljava/lang/Class;"
-                    )
-                    .get(0),
-                  Arrays.asList(
-                    vm.mirrorOf(classOf[runtime.OnHandlePre].getName())
-                  ),
-                  0
-                );
 
                 val HandlePreClassType = vm
                   .classesByName(classOf[runtime.HandlePre].getName())
@@ -171,27 +183,6 @@ class VmManager(
                 );
 
                 mainMethodExitRequest.disable();
-                onHandlePreMethodEntryRequest.enable();
-              }
-            }
-            case evt: MethodEntryEvent => {
-              if (
-                evt.method().declaringType().name().equals(onHandlePde)
-                && evt.method().name().equals("onUpdateLocation")
-              ) {
-                val frame = evt.thread().frame(0);
-                val location =
-                  frame
-                    .getArgumentValues()
-                    .get(0)
-                    .asInstanceOf[DoubleValue]
-                    .value();
-
-                runner.location = location;
-                runner.maxLocation = Math.max(runner.maxLocation, location);
-                runner.eventQueue.add(
-                  RunnerEvent.UpdateLocation(location, runner.maxLocation)
-                )
               }
             }
             case _ => {}

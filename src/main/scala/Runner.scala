@@ -45,6 +45,11 @@ import processing.app.contrib.ModeContribution
 import processing.app.Sketch
 import processing.mode.java.JavaBuild
 import java.util.concurrent.LinkedTransferQueue
+import java.net.UnixDomainSocketAddress
+import java.nio.channels.ServerSocketChannel
+import java.net.StandardProtocolFamily
+import java.nio.file.Files
+import java.nio.file.Path
 
 enum RunnerCmd {
   case ReloadSketch(location: Option[Double] = None);
@@ -62,14 +67,21 @@ class Runner(val sketchPath: String) {
   var location = 0.0;
   var maxLocation = 0.0;
 
+  val sockPath = Path.of(sketchPath, "seekprog.sock")
+
   def run() = {
+    Files.deleteIfExists(sockPath);
+    val sockAddr = UnixDomainSocketAddress.of(sockPath);
+    val ssc = ServerSocketChannel.open(StandardProtocolFamily.UNIX);
+    ssc.bind(sockAddr);
+
     Base.setCommandLine();
     Platform.init();
     Preferences.init();
     Base.locateSketchbookFolder();
 
     while (true) {
-      new VmManager(this).run();
+      new VmManager(this, ssc).run();
     }
   }
 }

@@ -18,6 +18,11 @@ lazy val root = project
       "org.scalameta" %% "munit" % "0.7.29" % Test,
       "org.scalafx" %% "scalafx" % "20.0.0-R31"
     ),
+    libraryDependencies ++= Seq(
+      "io.circe" %% "circe-core",
+      "io.circe" %% "circe-generic",
+      "io.circe" %% "circe-parser"
+    ).map(_ % "0.14.5"),
     scalacOptions ++= Seq(
       "-no-indent"
     ),
