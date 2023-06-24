@@ -99,10 +99,10 @@ class VmManager(
       );
     val vm = launchingConnector.launch(env);
 
-    val mainMethodExitRequest =
-      vm.eventRequestManager().createMethodExitRequest();
-    mainMethodExitRequest.addClassFilter(mainClassName);
-    mainMethodExitRequest.enable();
+    val mainMethodEntryRequest =
+      vm.eventRequestManager().createMethodEntryRequest();
+    mainMethodEntryRequest.addClassFilter(mainClassName);
+    mainMethodEntryRequest.enable();
 
     runner.eventQueue.add(RunnerEvent.StartSketch());
 
@@ -115,12 +115,9 @@ class VmManager(
         RuntimeEvent.fromBytes(buf) match {
           case RuntimeEvent.OnTargetFrameCount => {}
           case RuntimeEvent.OnUpdateLocation(location) => {
-            // TODO: スレッドセーフではない
-            runner.location = location;
-            runner.maxLocation = Math.max(runner.maxLocation, location);
-            runner.eventQueue.add(
-              RunnerEvent.UpdateLocation(location, runner.maxLocation)
-            )
+            runner.cmdQueue.add(
+              RunnerCmd.UpdateLocation(location)
+            );
           }
         }
 
@@ -130,16 +127,14 @@ class VmManager(
     }).start()
 
     try {
-      for (
-        eventSet <- Iterator
-          .from(0)
-          .map(_ => vm.eventQueue().remove())
-          .takeWhile(_ != null)
-      ) {
-        for (evt <- eventSet.nn.asScala) {
+      while (true) {
+        val eventSet = Option(vm.eventQueue().remove(200))
+          .map(_.asScala)
+          .getOrElse(Seq.empty);
+        for (evt <- eventSet) {
           println(evt);
           evt match {
-            case evt: MethodExitEvent => {
+            case evt: MethodEntryEvent => {
               if (
                 evt.method().declaringType().name().equals(mainClassName)
                 && evt.method().name().equals("setup")
@@ -182,12 +177,11 @@ class VmManager(
                   0
                 );
 
-                mainMethodExitRequest.disable();
+                mainMethodEntryRequest.disable();
               }
             }
             case _ => {}
           }
-
         }
 
         {
@@ -233,6 +227,13 @@ class VmManager(
               println("Reloading sketch...");
               location.foreach { location => runner.location = location }
               vm.exit(0);
+            }
+            case RunnerCmd.UpdateLocation(location) => {
+              runner.location = location;
+              runner.maxLocation = Math.max(runner.maxLocation, location);
+              runner.eventQueue.add(
+                RunnerEvent.UpdateLocation(location, runner.maxLocation)
+              )
             }
           }
         }

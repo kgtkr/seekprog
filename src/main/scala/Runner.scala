@@ -53,6 +53,7 @@ import java.nio.file.Path
 
 enum RunnerCmd {
   case ReloadSketch(location: Option[Double] = None);
+  case UpdateLocation(location: Double);
 }
 
 enum RunnerEvent {
