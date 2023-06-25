@@ -53,6 +53,43 @@ import net.kgtkr.seekprog.runtime.RuntimeEvent
 import java.nio.charset.StandardCharsets
 import java.nio.ByteBuffer
 
+object VmManager {
+  def flushOut(vm: VirtualMachine) = {
+
+    {
+      val reader = new InputStreamReader(vm.process().getInputStream());
+      val writer = new OutputStreamWriter(System.out);
+      var size = 0;
+      val buf = new Array[Char](1024);
+      while (
+        reader.ready() && {
+          size = reader.read(buf);
+          size != -1
+        }
+      ) {
+        writer.write(buf, 0, size);
+      }
+      writer.flush();
+    }
+
+    {
+      val reader = new InputStreamReader(vm.process().getErrorStream());
+      val writer = new OutputStreamWriter(System.err);
+      var size = 0;
+      val buf = new Array[Char](1024);
+      while (
+        reader.ready() && {
+          size = reader.read(buf);
+          size != -1
+        }
+      ) {
+        writer.write(buf, 0, size);
+      }
+      writer.flush();
+    }
+  }
+}
+
 class VmManager(
     val runner: Runner,
     val ssc: ServerSocketChannel
@@ -186,37 +223,7 @@ class VmManager(
           }
         }
 
-        {
-          val reader = new InputStreamReader(vm.process().getInputStream());
-          val writer = new OutputStreamWriter(System.out);
-          var size = 0;
-          val buf = new Array[Char](1024);
-          while (
-            reader.ready() && {
-              size = reader.read(buf);
-              size != -1
-            }
-          ) {
-            writer.write(buf, 0, size);
-          }
-          writer.flush();
-        }
-
-        {
-          val reader = new InputStreamReader(vm.process().getErrorStream());
-          val writer = new OutputStreamWriter(System.err);
-          var size = 0;
-          val buf = new Array[Char](1024);
-          while (
-            reader.ready() && {
-              size = reader.read(buf);
-              size != -1
-            }
-          ) {
-            writer.write(buf, 0, size);
-          }
-          writer.flush();
-        }
+        VmManager.flushOut(vm);
 
         for (
           cmd <- Iterator
@@ -252,19 +259,7 @@ class VmManager(
         e.printStackTrace();
       }
     } finally {
-      val reader = new InputStreamReader(vm.process().getInputStream());
-      val writer = new OutputStreamWriter(System.out);
-      var size = 0;
-      val buf = new Array[Char](1024);
-      while (
-        reader.ready() && {
-          size = reader.read(buf);
-          size != -1
-        }
-      ) {
-        writer.write(buf, 0, size);
-      }
-      writer.flush();
+      VmManager.flushOut(vm);
     }
   }
 }
