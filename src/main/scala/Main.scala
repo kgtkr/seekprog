@@ -86,25 +86,22 @@ object Main extends JFXApp3 {
               ()
             })
           };
-          new Thread(() => {
-            while (true) {
-              val event = runner.eventQueue.take()
-              Platform.runLater {
-                event match {
-                  case RunnerEvent.UpdateLocation(value2, max2) => {
-                    if (!loading) {
-                      slider.max = max2
-                      slider.value = value2
-                    }
-                  }
-                  case RunnerEvent.StartSketch() => {
-                    loading = false
+          runner.eventListeners = (event => {
+            Platform.runLater {
+              event match {
+                case RunnerEvent.UpdateLocation(value2, max2) => {
+                  if (!loading) {
+                    slider.max = max2
+                    slider.value = value2
                   }
                 }
+                case RunnerEvent.StartSketch() => {
+                  loading = false
+                }
               }
-
             }
-          }).start()
+          }) :: runner.eventListeners;
+
           children = Seq(
             slider,
             new Text {

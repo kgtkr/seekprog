@@ -63,7 +63,8 @@ enum RunnerEvent {
 
 class Runner(val sketchPath: String) {
   val cmdQueue = new LinkedTransferQueue[RunnerCmd]();
-  val eventQueue = new LinkedTransferQueue[RunnerEvent]();
+  // 1つのスレッドからしかアクセスしないこと
+  var eventListeners = List[RunnerEvent => Unit]();
 
   var location = 0.0;
   var maxLocation = 0.0;

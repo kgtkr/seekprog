@@ -104,7 +104,9 @@ class VmManager(
     mainMethodEntryRequest.addClassFilter(mainClassName);
     mainMethodEntryRequest.enable();
 
-    runner.eventQueue.add(RunnerEvent.StartSketch());
+    for (listener <- runner.eventListeners) {
+      listener(RunnerEvent.StartSketch())
+    }
 
     new Thread(() => {
       val sc = ssc.accept();
@@ -231,9 +233,11 @@ class VmManager(
             case RunnerCmd.UpdateLocation(location) => {
               runner.location = location;
               runner.maxLocation = Math.max(runner.maxLocation, location);
-              runner.eventQueue.add(
-                RunnerEvent.UpdateLocation(location, runner.maxLocation)
-              )
+              for (listener <- runner.eventListeners) {
+                listener(
+                  RunnerEvent.UpdateLocation(location, runner.maxLocation)
+                )
+              }
             }
           }
         }
