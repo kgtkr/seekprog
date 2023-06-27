@@ -8,6 +8,8 @@ import java.nio.file.Path
 import java.net.UnixDomainSocketAddress
 import processing.event.MouseEvent
 import processing.event.KeyEvent
+import scala.jdk.CollectionConverters._
+import scala.collection.mutable.Buffer
 
 object HandlePre {
   def apply(applet: PApplet, targetFrameCount: Int) = {
@@ -31,6 +33,8 @@ class HandlePre(
 ) {
   var gBak: Option[PGraphics] = None;
   var onTarget = false;
+  val currentFrameEvents = Buffer[EventWrapper]();
+  val eventsBuf = Buffer[List[EventWrapper]]();
 
   def pre() = {
     if (this.applet.frameCount == 1) {
@@ -49,20 +53,35 @@ class HandlePre(
       )
     }
 
+    if (this.onTarget) {
+      this.eventsBuf += this.currentFrameEvents.toList;
+      this.currentFrameEvents.clear();
+    }
+
     if (this.onTarget && this.applet.frameCount % 60 == 0) {
       socketChannel.write(
         RuntimeEvent
-          .OnUpdateLocation(this.applet.frameCount.toDouble / 60)
+          .OnUpdateLocation(
+            this.applet.frameCount.toDouble / 60,
+            this.eventsBuf.toList
+          )
           .toBytes()
       )
+      this.eventsBuf.clear();
     }
   }
 
   def mouseEvent(evt: MouseEvent) = {
-    println(evt)
+    if (this.onTarget) {
+      this.currentFrameEvents +=
+        EventWrapper.Mouse(MouseEventWrapper.fromPde(evt));
+    }
   }
 
   def keyEvent(evt: KeyEvent) = {
-    println(evt)
+    if (this.onTarget) {
+      this.currentFrameEvents +=
+        EventWrapper.Key(KeyEventWrapper.fromPde(evt));
+    }
   }
 }

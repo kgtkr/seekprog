@@ -1,10 +1,14 @@
 package net.kgtkr.seekprog.runtime;
 
 import java.nio.ByteBuffer
-import io.circe._, io.circe.generic.auto._, io.circe.parser._, io.circe.syntax._
+import io.circe._, io.circe.generic.semiauto._, io.circe.parser._,
+  io.circe.syntax._
 import java.nio.charset.StandardCharsets
 
 object RuntimeEvent {
+  implicit val encoder: Encoder[RuntimeEvent] = deriveEncoder
+  implicit val decoder: Decoder[RuntimeEvent] = deriveDecoder
+
   def fromBytes(bytes: ByteBuffer): RuntimeEvent = {
     decode[RuntimeEvent](
       StandardCharsets.UTF_8.decode(bytes).toString()
@@ -15,7 +19,7 @@ object RuntimeEvent {
 
 enum RuntimeEvent {
   case OnTargetFrameCount;
-  case OnUpdateLocation(time: Double);
+  case OnUpdateLocation(time: Double, events: List[List[EventWrapper]]);
 
   def toBytes(): ByteBuffer = {
     ByteBuffer.wrap(

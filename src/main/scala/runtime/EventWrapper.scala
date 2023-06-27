@@ -2,6 +2,8 @@ package net.kgtkr.seekprog.runtime;
 
 import processing.event.MouseEvent
 import processing.event.KeyEvent
+import io.circe._, io.circe.generic.semiauto._, io.circe.parser._,
+  io.circe.syntax._
 
 /*
 MouseEvent(Object nativeObject,
@@ -10,6 +12,9 @@ MouseEvent(Object nativeObject,
  */
 
 object MouseEventWrapper {
+  implicit val encoder: Encoder[MouseEventWrapper] = deriveEncoder
+  implicit val decoder: Decoder[MouseEventWrapper] = deriveDecoder
+
   def fromPde(e: MouseEvent): MouseEventWrapper = {
     MouseEventWrapper(
       e.getMillis(),
@@ -53,6 +58,9 @@ public KeyEvent(Object nativeObject,
  */
 
 object KeyEventWrapper {
+  implicit val encoder: Encoder[KeyEventWrapper] = deriveEncoder
+  implicit val decoder: Decoder[KeyEventWrapper] = deriveDecoder
+
   def fromPde(e: KeyEvent): KeyEventWrapper = {
     KeyEventWrapper(
       e.getMillis(),
@@ -84,4 +92,14 @@ case class KeyEventWrapper(
       isAutoRepeat
     )
   }
+}
+
+object EventWrapper {
+  implicit val encoder: Encoder[EventWrapper] = deriveEncoder
+  implicit val decoder: Decoder[EventWrapper] = deriveDecoder
+}
+
+enum EventWrapper {
+  case Mouse(e: MouseEventWrapper);
+  case Key(e: KeyEventWrapper);
 }

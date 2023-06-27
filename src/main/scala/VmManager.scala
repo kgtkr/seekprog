@@ -2,7 +2,6 @@ package net.kgtkr.seekprog;
 
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Map;
 
@@ -147,13 +146,13 @@ class VmManager(
 
     new Thread(() => {
       val sc = ssc.accept();
-      val buf = ByteBuffer.allocate(1024)
+      val buf = ByteBuffer.allocate(1024 * 10) // TODO: 大きいJSONに対応
 
       while (sc.read(buf) != -1) {
         buf.flip();
         RuntimeEvent.fromBytes(buf) match {
           case RuntimeEvent.OnTargetFrameCount => {}
-          case RuntimeEvent.OnUpdateLocation(location) => {
+          case RuntimeEvent.OnUpdateLocation(location, _) => {
             runner.cmdQueue.add(
               RunnerCmd.UpdateLocation(location)
             );
