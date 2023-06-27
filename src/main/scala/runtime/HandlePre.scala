@@ -6,6 +6,8 @@ import java.nio.channels.SocketChannel
 import java.net.StandardProtocolFamily
 import java.nio.file.Path
 import java.net.UnixDomainSocketAddress
+import processing.event.MouseEvent
+import processing.event.KeyEvent
 
 object HandlePre {
   def apply(applet: PApplet, targetFrameCount: Int) = {
@@ -17,6 +19,8 @@ object HandlePre {
     applet.frameRate(1e+9f + 1);
     val handlePre = new HandlePre(applet, targetFrameCount, socketChannel);
     applet.registerMethod("pre", handlePre);
+    applet.registerMethod("mouseEvent", handlePre);
+    applet.registerMethod("keyEvent", handlePre);
   }
 }
 
@@ -52,5 +56,13 @@ class HandlePre(
           .toBytes()
       )
     }
+  }
+
+  def mouseEvent(evt: MouseEvent) = {
+    println(evt)
+  }
+
+  def keyEvent(evt: KeyEvent) = {
+    println(evt)
   }
 }
