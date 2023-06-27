@@ -24,7 +24,7 @@ void draw() {
     x = width;
   }
   if (height < y) {
-    dy *= -1; // ここの値を変える
+    dy *= -0.9; // ここの値を変える
     y = height;
   }
   circle(x, y, 100);
