@@ -49,6 +49,8 @@ import java.nio.channels.ServerSocketChannel
 import java.net.StandardProtocolFamily
 import java.nio.file.Files
 import java.nio.file.Path
+import net.kgtkr.seekprog.runtime.EventWrapper
+import scala.collection.mutable.Buffer
 
 enum RunnerCmd {
   case ReloadSketch(frameCount: Option[Int] = None);
@@ -67,6 +69,7 @@ class Runner(val sketchPath: String) {
 
   var frameCount = 0;
   var maxFrameCount = 0;
+  val events = Buffer[List[EventWrapper]]();
 
   val sockPath = Path.of(sketchPath, "seekprog.sock")
 

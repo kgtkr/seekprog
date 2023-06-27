@@ -10,16 +10,23 @@ import processing.event.MouseEvent
 import processing.event.KeyEvent
 import scala.jdk.CollectionConverters._
 import scala.collection.mutable.Buffer
+import io.circe._, io.circe.generic.semiauto._, io.circe.parser._,
+  io.circe.syntax._
 
 object HandlePre {
-  def apply(applet: PApplet, targetFrameCount: Int) = {
+  def apply(applet: PApplet, targetFrameCount: Int, events: String) = {
     val sockPath = Path.of(System.getProperty("seekprog.sock"));
     val sockAddr = UnixDomainSocketAddress.of(sockPath);
     val socketChannel = SocketChannel.open(StandardProtocolFamily.UNIX);
     socketChannel.connect(sockAddr);
 
     applet.frameRate(1e+9f + 1);
-    val handlePre = new HandlePre(applet, targetFrameCount, socketChannel);
+    val handlePre = new HandlePre(
+      applet,
+      targetFrameCount,
+      socketChannel,
+      decode[List[List[EventWrapper]]](events).right.get.toVector
+    );
     applet.registerMethod("pre", handlePre);
     applet.registerMethod("mouseEvent", handlePre);
     applet.registerMethod("keyEvent", handlePre);
@@ -29,7 +36,8 @@ object HandlePre {
 class HandlePre(
     applet: PApplet,
     targetFrameCount: Int,
-    socketChannel: SocketChannel
+    socketChannel: SocketChannel,
+    events: Vector[List[EventWrapper]]
 ) {
   var gBak: Option[PGraphics] = None;
   var onTarget = false;
@@ -53,7 +61,12 @@ class HandlePre(
       )
     }
 
-    if (this.onTarget) {
+    if (!this.onTarget) {
+      this.events(this.applet.frameCount - 1).foreach {
+        case EventWrapper.Mouse(evt) => this.applet.postEvent(evt.toPde());
+        case EventWrapper.Key(evt)   => this.applet.postEvent(evt.toPde());
+      };
+    } else {
       this.eventsBuf += this.currentFrameEvents.toList;
       this.currentFrameEvents.clear();
     }

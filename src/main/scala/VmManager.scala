@@ -51,7 +51,9 @@ import java.io.BufferedReader
 import net.kgtkr.seekprog.runtime.RuntimeEvent
 import java.nio.charset.StandardCharsets
 import java.nio.ByteBuffer
-
+import io.circe._, io.circe.generic.semiauto._, io.circe.parser._,
+  io.circe.syntax._
+import net.kgtkr.seekprog.runtime.EventWrapper
 object VmManager {
   def flushOut(vm: VirtualMachine) = {
 
@@ -152,9 +154,15 @@ class VmManager(
         buf.flip();
         RuntimeEvent.fromBytes(buf) match {
           case RuntimeEvent.OnTargetFrameCount => {}
-          case RuntimeEvent.OnUpdateLocation(location, _) => {
+          case RuntimeEvent.OnUpdateLocation(frameCount, events) => {
+            val startFrameCount = frameCount - events.length + 1;
+            if (startFrameCount <= runner.events.length) {
+              runner.events.trimEnd(runner.events.length - startFrameCount + 1);
+            }
+            runner.events ++= events;
+            assert(runner.events.length == frameCount);
             runner.cmdQueue.add(
-              RunnerCmd.UpdateLocation(location)
+              RunnerCmd.UpdateLocation(frameCount)
             );
           }
         }
@@ -210,7 +218,13 @@ class VmManager(
                     .get(0),
                   Arrays.asList(
                     instance,
-                    vm.mirrorOf(runner.frameCount)
+                    vm.mirrorOf(runner.frameCount),
+                    vm.mirrorOf(
+                      runner.events.toList
+                        .take(runner.frameCount)
+                        .asJson
+                        .noSpaces
+                    )
                   ),
                   0
                 );
