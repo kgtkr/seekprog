@@ -51,12 +51,12 @@ import java.nio.file.Files
 import java.nio.file.Path
 
 enum RunnerCmd {
-  case ReloadSketch(location: Option[Double] = None);
-  case UpdateLocation(location: Double);
+  case ReloadSketch(frameCount: Option[Int] = None);
+  case UpdateLocation(frameCount: Int);
 }
 
 enum RunnerEvent {
-  case UpdateLocation(value: Double, max: Double);
+  case UpdateLocation(frameCount: Int, max: Int);
   case StartSketch();
 }
 
@@ -65,8 +65,8 @@ class Runner(val sketchPath: String) {
   // 1つのスレッドからしかアクセスしないこと
   var eventListeners = List[RunnerEvent => Unit]();
 
-  var location = 0.0;
-  var maxLocation = 0.0;
+  var frameCount = 0;
+  var maxFrameCount = 0;
 
   val sockPath = Path.of(sketchPath, "seekprog.sock")
 

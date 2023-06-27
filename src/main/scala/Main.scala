@@ -80,7 +80,7 @@ object Main extends JFXApp3 {
               if (!changing && !loading) {
                 loading = true
                 runner.cmdQueue.add(
-                  RunnerCmd.ReloadSketch(Some(value.value))
+                  RunnerCmd.ReloadSketch(Some((value.value * 60).toInt))
                 );
               }
               ()
@@ -91,8 +91,8 @@ object Main extends JFXApp3 {
               event match {
                 case RunnerEvent.UpdateLocation(value2, max2) => {
                   if (!loading) {
-                    slider.max = max2
-                    slider.value = value2
+                    slider.max = max2.toDouble / 60
+                    slider.value = value2.toDouble / 60
                   }
                 }
                 case RunnerEvent.StartSketch() => {

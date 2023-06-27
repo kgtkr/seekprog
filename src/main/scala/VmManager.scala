@@ -210,7 +210,7 @@ class VmManager(
                     .get(0),
                   Arrays.asList(
                     instance,
-                    vm.mirrorOf((60 * runner.location).toInt)
+                    vm.mirrorOf(runner.frameCount)
                   ),
                   0
                 );
@@ -231,17 +231,19 @@ class VmManager(
             .takeWhile(_ != null)
         ) {
           cmd match {
-            case RunnerCmd.ReloadSketch(location) => {
+            case RunnerCmd.ReloadSketch(frameCount) => {
               println("Reloading sketch...");
-              location.foreach { location => runner.location = location }
+              frameCount.foreach { frameCount =>
+                runner.frameCount = frameCount
+              }
               vm.exit(0);
             }
-            case RunnerCmd.UpdateLocation(location) => {
-              runner.location = location;
-              runner.maxLocation = Math.max(runner.maxLocation, location);
+            case RunnerCmd.UpdateLocation(frameCount) => {
+              runner.frameCount = frameCount;
+              runner.maxFrameCount = Math.max(runner.maxFrameCount, frameCount);
               for (listener <- runner.eventListeners) {
                 listener(
-                  RunnerEvent.UpdateLocation(location, runner.maxLocation)
+                  RunnerEvent.UpdateLocation(frameCount, runner.maxFrameCount)
                 )
               }
             }

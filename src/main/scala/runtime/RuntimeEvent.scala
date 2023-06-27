@@ -19,7 +19,7 @@ object RuntimeEvent {
 
 enum RuntimeEvent {
   case OnTargetFrameCount;
-  case OnUpdateLocation(time: Double, events: List[List[EventWrapper]]);
+  case OnUpdateLocation(frameCount: Int, events: List[List[EventWrapper]]);
 
   def toBytes(): ByteBuffer = {
     ByteBuffer.wrap(

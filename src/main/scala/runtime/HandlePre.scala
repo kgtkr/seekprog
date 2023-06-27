@@ -62,7 +62,7 @@ class HandlePre(
       socketChannel.write(
         RuntimeEvent
           .OnUpdateLocation(
-            this.applet.frameCount.toDouble / 60,
+            this.applet.frameCount,
             this.eventsBuf.toList
           )
           .toBytes()
