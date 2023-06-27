@@ -1,5 +1,5 @@
-int MAX_SIZE = 5 + 1;
-int MAX_COUNT = 60;
+int MAX_SIZE = 5 + 1; // 増やすことができる
+int MAX_COUNT = 60 * 100; // 短くすることができる
 int[] xs = new int[MAX_SIZE];
 int[] ys = new int[MAX_SIZE];
 int[] count = new int[MAX_SIZE];
@@ -16,7 +16,7 @@ void draw() {
   
   for (int i = begin; i != end; i = (i + 1) % MAX_SIZE) {
     fill(255, 255, 0); 
-    circle(xs[i], ys[i], min(frameCount - count[i], 100));
+    circle(xs[i], ys[i], min(frameCount - count[i], 50));
   }
 
   int newBegin = begin;
