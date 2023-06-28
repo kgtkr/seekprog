@@ -1,10 +1,11 @@
-int MAX_SIZE = 5 + 1; // 増やすことができる
-int MAX_COUNT = 60 * 100; // 短くすることができる
+int MAX_SIZE = 50 + 1; // 増やすことができる
+int MAX_COUNT = 60 * 5; // 短くすることができる
 int[] xs = new int[MAX_SIZE];
 int[] ys = new int[MAX_SIZE];
 int[] count = new int[MAX_SIZE];
 int begin = 0;
 int end = 0;
+int lastDraw = 0;
 
 void setup() {
   size(600, 400);
@@ -12,11 +13,12 @@ void setup() {
 
 void draw() {
   background(255);
-
+  noStroke();
   
   for (int i = begin; i != end; i = (i + 1) % MAX_SIZE) {
-    fill(255, 255, 0); 
-    circle(xs[i], ys[i], min(frameCount - count[i], 50));
+    float c = (frameCount - count[i]) / (float)MAX_COUNT;
+    fill(255, 255 * c, 255 * c); 
+    circle(xs[i], ys[i], 20);
   }
 
   int newBegin = begin;
@@ -29,7 +31,12 @@ void draw() {
   
 }  
 
-void mousePressed() {
+void mouseDragged() {
+  if (frameCount - lastDraw < 2) {
+    return;
+  }
+  lastDraw = frameCount;
+
   if (begin == (end + 1) % MAX_SIZE) {
     begin = (begin + 1) % MAX_SIZE;
   }
