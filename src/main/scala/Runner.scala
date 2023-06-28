@@ -54,7 +54,11 @@ import scala.collection.mutable.Buffer
 
 enum RunnerCmd {
   case ReloadSketch(frameCount: Option[Int] = None);
-  case UpdateLocation(frameCount: Int);
+  case UpdateLocation(
+      frameCount: Int,
+      trimMax: Boolean,
+      events: List[List[EventWrapper]]
+  );
 }
 
 enum RunnerEvent {

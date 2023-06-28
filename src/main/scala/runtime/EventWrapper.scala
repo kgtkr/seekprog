@@ -5,6 +5,9 @@ import processing.event.KeyEvent
 import io.circe._, io.circe.generic.semiauto._, io.circe.parser._,
   io.circe.syntax._
 
+// nativeフィールドに入るシステムによって作られたイベントであることを示すマーカー
+object ReproductionEvent;
+
 /*
 MouseEvent(Object nativeObject,
                     long millis, int action, int modifiers,
@@ -39,7 +42,7 @@ case class MouseEventWrapper(
 ) {
   def toPde(): MouseEvent = {
     new MouseEvent(
-      null,
+      ReproductionEvent,
       millis,
       action,
       modifiers,
@@ -83,7 +86,7 @@ case class KeyEventWrapper(
 ) {
   def toPde(): KeyEvent = {
     new KeyEvent(
-      null,
+      ReproductionEvent,
       millis,
       action,
       modifiers,

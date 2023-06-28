@@ -148,23 +148,22 @@ class VmManager(
 
     new Thread(() => {
       val sc = ssc.accept();
-      val buf = ByteBuffer.allocate(1024 * 10) // TODO: 大きいJSONに対応
+      val buf = ByteBuffer.allocate(1024);
+      val sBuf = new StringBuffer();
 
       while (sc.read(buf) != -1) {
         buf.flip();
-        RuntimeEvent.fromBytes(buf) match {
-          case RuntimeEvent.OnTargetFrameCount => {}
-          case RuntimeEvent.OnUpdateLocation(frameCount, events) => {
-            val startFrameCount = frameCount - events.length + 1;
-            if (startFrameCount <= runner.events.length) {
-              runner.events.trimEnd(runner.events.length - startFrameCount + 1);
+        sBuf.append(StandardCharsets.UTF_8.decode(buf));
+        if (sBuf.charAt(sBuf.length() - 1) == '\n') {
+          RuntimeEvent.fromJSON(sBuf.toString()) match {
+            case RuntimeEvent.OnTargetFrameCount => {}
+            case RuntimeEvent.OnUpdateLocation(frameCount, trimMax, events) => {
+              runner.cmdQueue.add(
+                RunnerCmd.UpdateLocation(frameCount, trimMax, events)
+              );
             }
-            runner.events ++= events;
-            assert(runner.events.length == frameCount);
-            runner.cmdQueue.add(
-              RunnerCmd.UpdateLocation(frameCount)
-            );
           }
+          sBuf.setLength(0);
         }
 
         buf.clear()
@@ -220,10 +219,7 @@ class VmManager(
                     instance,
                     vm.mirrorOf(runner.frameCount),
                     vm.mirrorOf(
-                      runner.events.toList
-                        .take(runner.frameCount)
-                        .asJson
-                        .noSpaces
+                      runner.events.toList.asJson.noSpaces
                     )
                   ),
                   0
@@ -252,9 +248,26 @@ class VmManager(
               }
               vm.exit(0);
             }
-            case RunnerCmd.UpdateLocation(frameCount) => {
+            case RunnerCmd.UpdateLocation(frameCount, trimMax, events) => {
               runner.frameCount = frameCount;
-              runner.maxFrameCount = Math.max(runner.maxFrameCount, frameCount);
+              runner.maxFrameCount = if (trimMax) {
+                frameCount
+              } else {
+                Math.max(runner.maxFrameCount, frameCount);
+              };
+
+              if (runner.maxFrameCount < runner.events.length) {
+                runner.events.trimEnd(
+                  runner.events.length - runner.maxFrameCount
+                );
+              } else if (runner.maxFrameCount > runner.events.length) {
+                runner.events ++= Seq.fill(
+                  runner.maxFrameCount - runner.events.length
+                )(List());
+              }
+              for ((event, i) <- events.zipWithIndex) {
+                runner.events(frameCount - events.length + i) = event;
+              }
               for (listener <- runner.eventListeners) {
                 listener(
                   RunnerEvent.UpdateLocation(frameCount, runner.maxFrameCount)

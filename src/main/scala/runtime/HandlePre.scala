@@ -12,6 +12,7 @@ import scala.jdk.CollectionConverters._
 import scala.collection.mutable.Buffer
 import io.circe._, io.circe.generic.semiauto._, io.circe.parser._,
   io.circe.syntax._
+import scala.util.Try
 
 object HandlePre {
   def apply(applet: PApplet, targetFrameCount: Int, events: String) = {
@@ -37,12 +38,13 @@ class HandlePre(
     applet: PApplet,
     targetFrameCount: Int,
     socketChannel: SocketChannel,
-    events: Vector[List[EventWrapper]]
+    reproductionEvents: Vector[List[EventWrapper]]
 ) {
   var gBak: Option[PGraphics] = None;
   var onTarget = false;
   val currentFrameEvents = Buffer[EventWrapper]();
   val eventsBuf = Buffer[List[EventWrapper]]();
+  var stopReproductionEvent = false;
 
   def pre() = {
     if (this.applet.frameCount == 1) {
@@ -61,12 +63,17 @@ class HandlePre(
       )
     }
 
-    if (!this.onTarget) {
-      this.events(this.applet.frameCount - 1).foreach {
-        case EventWrapper.Mouse(evt) => this.applet.postEvent(evt.toPde());
-        case EventWrapper.Key(evt)   => this.applet.postEvent(evt.toPde());
-      };
-    } else {
+    if (!this.stopReproductionEvent) {
+      Try(this.reproductionEvents(this.applet.frameCount - 1)).toOption
+        .foreach {
+          _.foreach {
+            case EventWrapper.Mouse(evt) => this.applet.postEvent(evt.toPde());
+            case EventWrapper.Key(evt)   => this.applet.postEvent(evt.toPde());
+          };
+        };
+    }
+
+    if (this.onTarget) {
       this.eventsBuf += this.currentFrameEvents.toList;
       this.currentFrameEvents.clear();
     }
@@ -76,6 +83,7 @@ class HandlePre(
         RuntimeEvent
           .OnUpdateLocation(
             this.applet.frameCount,
+            this.stopReproductionEvent,
             this.eventsBuf.toList
           )
           .toBytes()
@@ -88,6 +96,9 @@ class HandlePre(
     if (this.onTarget) {
       this.currentFrameEvents +=
         EventWrapper.Mouse(MouseEventWrapper.fromPde(evt));
+      if (evt.getNative() ne ReproductionEvent) {
+        this.stopReproductionEvent = true;
+      }
     }
   }
 
@@ -95,6 +106,9 @@ class HandlePre(
     if (this.onTarget) {
       this.currentFrameEvents +=
         EventWrapper.Key(KeyEventWrapper.fromPde(evt));
+      if (evt.getNative() ne ReproductionEvent) {
+        this.stopReproductionEvent = true;
+      }
     }
   }
 }
