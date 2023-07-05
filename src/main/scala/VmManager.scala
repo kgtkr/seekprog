@@ -137,10 +137,10 @@ class VmManager(
       );
     val vm = launchingConnector.launch(env);
 
-    val mainMethodEntryRequest =
-      vm.eventRequestManager().createMethodEntryRequest();
-    mainMethodEntryRequest.addClassFilter(mainClassName);
-    mainMethodEntryRequest.enable();
+    val classPrepareRequest =
+      vm.eventRequestManager().createClassPrepareRequest();
+    classPrepareRequest.addClassFilter(mainClassName);
+    classPrepareRequest.enable();
 
     for (listener <- runner.eventListeners) {
       listener(RunnerEvent.StartSketch())
@@ -179,54 +179,58 @@ class VmManager(
         for (evt <- eventSet) {
           println(evt);
           evt match {
-            case evt: MethodEntryEvent => {
-              if (
-                evt.method().declaringType().name().equals(mainClassName)
-                && evt.method().name().equals("setup")
-              ) {
-                val frame = evt.thread().frame(0);
-                val instance = frame.thisObject();
-
-                val ClassClassType = vm
-                  .classesByName("java.lang.Class")
-                  .get(0)
-                  .asInstanceOf[ClassType];
-                ClassClassType.invokeMethod(
-                  evt.thread(),
-                  ClassClassType
-                    .methodsByName(
-                      "forName",
-                      "(Ljava/lang/String;)Ljava/lang/Class;"
-                    )
-                    .get(0),
-                  Arrays.asList(
-                    vm.mirrorOf(classOf[runtime.HandlePre].getName())
-                  ),
-                  0
-                );
-
-                val HandlePreClassType = vm
-                  .classesByName(classOf[runtime.HandlePre].getName())
-                  .get(0)
-                  .asInstanceOf[ClassType];
-
-                HandlePreClassType.invokeMethod(
-                  evt.thread(),
-                  HandlePreClassType
-                    .methodsByName("apply")
-                    .get(0),
-                  Arrays.asList(
-                    instance,
-                    vm.mirrorOf(runner.frameCount),
-                    vm.mirrorOf(
-                      runner.events.toList.asJson.noSpaces
-                    )
-                  ),
-                  0
-                );
-
-                mainMethodEntryRequest.disable();
+            case evt: ClassPrepareEvent => {
+              val classType = evt.referenceType().asInstanceOf[ClassType];
+              if (classType.name() == mainClassName) {
+                val location =
+                  classType.methodsByName("setup").get(0).location();
+                val bpReq =
+                  vm.eventRequestManager().createBreakpointRequest(location);
+                bpReq.enable();
               }
+            }
+            case evt: BreakpointEvent => {
+              val frame = evt.thread().frame(0);
+              val instance = frame.thisObject();
+
+              val ClassClassType = vm
+                .classesByName("java.lang.Class")
+                .get(0)
+                .asInstanceOf[ClassType];
+              ClassClassType.invokeMethod(
+                evt.thread(),
+                ClassClassType
+                  .methodsByName(
+                    "forName",
+                    "(Ljava/lang/String;)Ljava/lang/Class;"
+                  )
+                  .get(0),
+                Arrays.asList(
+                  vm.mirrorOf(classOf[runtime.HandlePre].getName())
+                ),
+                0
+              );
+
+              val HandlePreClassType = vm
+                .classesByName(classOf[runtime.HandlePre].getName())
+                .get(0)
+                .asInstanceOf[ClassType];
+
+              HandlePreClassType.invokeMethod(
+                evt.thread(),
+                HandlePreClassType
+                  .methodsByName("apply")
+                  .get(0),
+                Arrays.asList(
+                  instance,
+                  vm.mirrorOf(runner.frameCount),
+                  vm.mirrorOf(
+                    runner.events.toList.asJson.noSpaces
+                  )
+                ),
+                0
+              );
+              evt.request().disable();
             }
             case _ => {}
           }
