@@ -19,6 +19,7 @@ void draw() {
   if (state == 1) {
     if (grid[y][x]) {
       dir = (dir + 1) % 4;
+      // dir = (dir + (x + y) % 2) % 4;
     } else {
       dir = (dir + 3) % 4;
     }
