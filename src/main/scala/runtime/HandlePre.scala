@@ -49,7 +49,7 @@ class HandlePre(
   def pre() = {
     if (this.applet.frameCount == 1) {
       this.gBak = Some(this.applet.g);
-      this.applet.g = new PGraphics();
+      this.applet.g = new PGraphicsDummy();
     }
 
     if (!this.onTarget && this.applet.frameCount >= this.targetFrameCount) {
