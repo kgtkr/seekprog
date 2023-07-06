@@ -67,8 +67,8 @@ void keyPressed() {
 
 void mouseDragged() {
   if (state == 0) {
-    int i = mouseX / GRID_SIZE;
-    int j = mouseY / GRID_SIZE;
+    int i = mouseY / GRID_SIZE;
+    int j = mouseX / GRID_SIZE;
     if (i >= 0 && i < SIZE && j >= 0 && j < SIZE) {
       grid[i][j] = true;
     }
