@@ -182,55 +182,68 @@ class VmManager(
             case evt: ClassPrepareEvent => {
               val classType = evt.referenceType().asInstanceOf[ClassType];
               if (classType.name() == mainClassName) {
-                val location =
-                  classType.methodsByName("setup").get(0).location();
-                val bpReq =
-                  vm.eventRequestManager().createBreakpointRequest(location);
-                bpReq.enable();
+                vm.eventRequestManager()
+                  .createBreakpointRequest(
+                    classType.methodsByName("settings").get(0).location()
+                  )
+                  .enable();
               }
             }
             case evt: BreakpointEvent => {
               val frame = evt.thread().frame(0);
               val instance = frame.thisObject();
 
-              val ClassClassType = vm
-                .classesByName("java.lang.Class")
-                .get(0)
-                .asInstanceOf[ClassType];
-              ClassClassType.invokeMethod(
-                evt.thread(),
-                ClassClassType
-                  .methodsByName(
-                    "forName",
-                    "(Ljava/lang/String;)Ljava/lang/Class;"
-                  )
-                  .get(0),
-                Arrays.asList(
-                  vm.mirrorOf(classOf[runtime.HandlePre].getName())
-                ),
-                0
-              );
+              evt.location().method().name() match {
+                case "settings" => {
+                  val ClassClassType = vm
+                    .classesByName("java.lang.Class")
+                    .get(0)
+                    .asInstanceOf[ClassType];
+                  ClassClassType.invokeMethod(
+                    evt.thread(),
+                    ClassClassType
+                      .methodsByName(
+                        "forName",
+                        "(Ljava/lang/String;)Ljava/lang/Class;"
+                      )
+                      .get(0),
+                    Arrays.asList(
+                      vm.mirrorOf(
+                        classOf[runtime.RuntimeMain].getName()
+                      )
+                    ),
+                    0
+                  );
 
-              val HandlePreClassType = vm
-                .classesByName(classOf[runtime.HandlePre].getName())
-                .get(0)
-                .asInstanceOf[ClassType];
+                  val RuntimeMainClassType = vm
+                    .classesByName(
+                      classOf[runtime.RuntimeMain].getName()
+                    )
+                    .get(0)
+                    .asInstanceOf[ClassType];
 
-              HandlePreClassType.invokeMethod(
-                evt.thread(),
-                HandlePreClassType
-                  .methodsByName("apply")
-                  .get(0),
-                Arrays.asList(
-                  instance,
-                  vm.mirrorOf(runner.frameCount),
-                  vm.mirrorOf(
-                    runner.events.toList.asJson.noSpaces
+                  RuntimeMainClassType.invokeMethod(
+                    evt.thread(),
+                    RuntimeMainClassType
+                      .methodsByName("run")
+                      .get(0),
+                    Arrays.asList(
+                      instance,
+                      vm.mirrorOf(runner.frameCount),
+                      vm.mirrorOf(
+                        runner.events.toList.asJson.noSpaces
+                      )
+                    ),
+                    0
+                  );
+                  evt.request().disable();
+                }
+                case _ =>
+                  throw new RuntimeException(
+                    "Unreachable"
                   )
-                ),
-                0
-              );
-              evt.request().disable();
+              }
+
             }
             case _ => {}
           }

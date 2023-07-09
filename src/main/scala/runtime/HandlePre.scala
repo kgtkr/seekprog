@@ -14,26 +14,6 @@ import io.circe._, io.circe.generic.semiauto._, io.circe.parser._,
   io.circe.syntax._
 import scala.util.Try
 
-object HandlePre {
-  def apply(applet: PApplet, targetFrameCount: Int, events: String) = {
-    val sockPath = Path.of(System.getProperty("seekprog.sock"));
-    val sockAddr = UnixDomainSocketAddress.of(sockPath);
-    val socketChannel = SocketChannel.open(StandardProtocolFamily.UNIX);
-    socketChannel.connect(sockAddr);
-
-    applet.frameRate(1e+9f + 1);
-    val handlePre = new HandlePre(
-      applet,
-      targetFrameCount,
-      socketChannel,
-      decode[List[List[EventWrapper]]](events).right.get.toVector
-    );
-    applet.registerMethod("pre", handlePre);
-    applet.registerMethod("mouseEvent", handlePre);
-    applet.registerMethod("keyEvent", handlePre);
-  }
-}
-
 class HandlePre(
     applet: PApplet,
     targetFrameCount: Int,
