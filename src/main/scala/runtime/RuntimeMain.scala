@@ -17,18 +17,32 @@ import scala.util.Try
 object RuntimeMain {
   var targetFrameCount = 0;
   var events: Vector[List[EventWrapper]] = Vector();
+  val socketChannel = {
+    val sockPath = Path.of(System.getProperty("seekprog.sock"));
+    val sockAddr = UnixDomainSocketAddress.of(sockPath);
+    val socketChannel = SocketChannel.open(StandardProtocolFamily.UNIX);
+    socketChannel.connect(sockAddr);
+    socketChannel
+  };
+  var handlePre: HandlePre = null;
 
-  def run(applet: PApplet, targetFrameCount: Int, events: String) = {
+  def run(sketch: PApplet, targetFrameCount: Int, events: String) = {
     val renderer = classOf[PGraphicsJava2DRuntime].getName();
     Class.forName(renderer);
     {
       val field = classOf[PApplet].getDeclaredField("renderer");
       field.setAccessible(true);
-      field.set(applet, renderer);
+      field.set(sketch, renderer);
     }
 
     this.targetFrameCount = targetFrameCount;
     this.events = decode[List[List[EventWrapper]]](events).right.get.toVector
+    this.handlePre = new HandlePre(
+      sketch,
+      RuntimeMain.targetFrameCount,
+      socketChannel,
+      RuntimeMain.events
+    );
   }
 }
 

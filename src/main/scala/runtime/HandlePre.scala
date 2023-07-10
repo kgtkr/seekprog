@@ -20,23 +20,14 @@ class HandlePre(
     socketChannel: SocketChannel,
     reproductionEvents: Vector[List[EventWrapper]]
 ) {
-  var gBak: Option[PGraphics] = None;
   var onTarget = false;
   val currentFrameEvents = Buffer[EventWrapper]();
   val eventsBuf = Buffer[List[EventWrapper]]();
   var stopReproductionEvent = false;
 
   def pre() = {
-    if (this.applet.frameCount == 1) {
-      this.gBak = Some(this.applet.g);
-      this.applet.g = new PGraphicsDummy();
-    }
-
     if (!this.onTarget && this.applet.frameCount >= this.targetFrameCount) {
-      this.applet.g.dispose();
-      this.applet.g = this.gBak.get;
       this.onTarget = true;
-      this.applet.frameRate(60);
       socketChannel.write(
         RuntimeEvent.OnTargetFrameCount
           .toBytes()

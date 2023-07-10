@@ -18,10 +18,18 @@ import scala.util.Try
 
 class PSurfaceAWTRuntime(graphics: PGraphics) extends PSurfaceAWT(graphics) {
   override def createThread(): Thread = {
-    return new AnimationThreadRuntime();
+    return new AnimationThreadRuntime {
+      override def callDraw(): Unit = {
+        sketch.handleDraw();
+        if (RuntimeMain.handlePre.onTarget) {
+          render();
+        }
+      }
+    };
   }
 
   class AnimationThreadRuntime extends AnimationThread {
+
     override def run(): Unit = {
       var beforeTime = System.nanoTime();
       var overSleepTime = 0L;
@@ -32,48 +40,39 @@ class PSurfaceAWTRuntime(graphics: PGraphics) extends PSurfaceAWT(graphics) {
       while ((Thread.currentThread() eq thread) && !sketch.finished) {
         checkPause();
         if (sketch.frameCount == 0) {
-          val sockPath = Path.of(System.getProperty("seekprog.sock"));
-          val sockAddr = UnixDomainSocketAddress.of(sockPath);
-          val socketChannel = SocketChannel.open(StandardProtocolFamily.UNIX);
-          socketChannel.connect(sockAddr);
-
-          sketch.frameRate(1e+9f + 1);
-          val handlePre = new HandlePre(
-            sketch,
-            RuntimeMain.targetFrameCount,
-            socketChannel,
-            RuntimeMain.events
-          );
-          sketch.registerMethod("pre", handlePre);
-          sketch.registerMethod("mouseEvent", handlePre);
-          sketch.registerMethod("keyEvent", handlePre);
+          sketch.registerMethod("pre", RuntimeMain.handlePre);
+          sketch.registerMethod("mouseEvent", RuntimeMain.handlePre);
+          sketch.registerMethod("keyEvent", RuntimeMain.handlePre);
         }
         callDraw();
-        val afterTime = System.nanoTime();
-        val timeDiff = afterTime - beforeTime;
-        val sleepTime = (frameRatePeriod - timeDiff) - overSleepTime;
+        if (RuntimeMain.handlePre.onTarget) {
+          val afterTime = System.nanoTime();
+          val timeDiff = afterTime - beforeTime;
+          val sleepTime = (frameRatePeriod - timeDiff) - overSleepTime;
 
-        if (sleepTime > 0) { // some time left in this cycle
-          try {
-            Thread.sleep(sleepTime / 1000000L, (sleepTime % 1000000L).toInt);
-            noDelays = 0; // Got some sleep, not delaying anymore
-          } catch {
-            case e: InterruptedException => {}
+          if (sleepTime > 0) { // some time left in this cycle
+            try {
+              Thread.sleep(sleepTime / 1000000L, (sleepTime % 1000000L).toInt);
+              noDelays = 0; // Got some sleep, not delaying anymore
+            } catch {
+              case e: InterruptedException => {}
+            }
+
+            overSleepTime = (System.nanoTime() - afterTime) - sleepTime;
+
+          } else {
+            overSleepTime = 0L;
+            noDelays += 1;
+
+            if (noDelays > NO_DELAYS_PER_YIELD) {
+              Thread.`yield`();
+              noDelays = 0;
+            }
           }
 
-          overSleepTime = (System.nanoTime() - afterTime) - sleepTime;
-
-        } else {
-          overSleepTime = 0L;
-          noDelays += 1;
-
-          if (noDelays > NO_DELAYS_PER_YIELD) {
-            Thread.`yield`();
-            noDelays = 0;
-          }
+          beforeTime = System.nanoTime();
         }
 
-        beforeTime = System.nanoTime();
       }
 
       sketch.dispose();
