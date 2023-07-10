@@ -24,10 +24,22 @@ class HandlePre(
   val currentFrameEvents = Buffer[EventWrapper]();
   val eventsBuf = Buffer[List[EventWrapper]]();
   var stopReproductionEvent = false;
+  var startTime = 0L;
 
   def pre() = {
+    if (this.applet.frameCount == 1) {
+      this.startTime = System.nanoTime();
+    }
+
     if (!this.onTarget && this.applet.frameCount >= this.targetFrameCount) {
       this.onTarget = true;
+      val endTime = System.nanoTime();
+      val ms = (endTime - this.startTime) / 1000000.0;
+      println(
+        "onTarget: " + ms + "ms, " +
+          "targetFrameCount: " + this.targetFrameCount + ", " +
+          "frameRate: " + this.targetFrameCount / ms * 1000
+      );
       socketChannel.write(
         RuntimeEvent.OnTargetFrameCount
           .toBytes()
