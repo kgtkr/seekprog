@@ -21,7 +21,7 @@ class PSurfaceAWTRuntime(graphics: PGraphics) extends PSurfaceAWT(graphics) {
     return new AnimationThreadRuntime {
       override def callDraw(): Unit = {
         sketch.handleDraw();
-        if (RuntimeMain.handlePre.onTarget) {
+        if (RuntimeMain.sketchHandler.onTarget) {
           render();
         }
       }
@@ -40,12 +40,12 @@ class PSurfaceAWTRuntime(graphics: PGraphics) extends PSurfaceAWT(graphics) {
       while ((Thread.currentThread() eq thread) && !sketch.finished) {
         checkPause();
         if (sketch.frameCount == 0) {
-          sketch.registerMethod("pre", RuntimeMain.handlePre);
-          sketch.registerMethod("mouseEvent", RuntimeMain.handlePre);
-          sketch.registerMethod("keyEvent", RuntimeMain.handlePre);
+          sketch.registerMethod("pre", RuntimeMain.sketchHandler);
+          sketch.registerMethod("mouseEvent", RuntimeMain.sketchHandler);
+          sketch.registerMethod("keyEvent", RuntimeMain.sketchHandler);
         }
         callDraw();
-        if (RuntimeMain.handlePre.onTarget) {
+        if (RuntimeMain.sketchHandler.onTarget) {
           val afterTime = System.nanoTime();
           val timeDiff = afterTime - beforeTime;
           val sleepTime = (frameRatePeriod - timeDiff) - overSleepTime;

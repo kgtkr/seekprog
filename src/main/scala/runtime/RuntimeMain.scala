@@ -24,7 +24,7 @@ object RuntimeMain {
     socketChannel.connect(sockAddr);
     socketChannel
   };
-  var handlePre: HandlePre = null;
+  var sketchHandler: SketchHandler = null;
 
   def run(sketch: PApplet, targetFrameCount: Int, events: String) = {
     val renderer = classOf[PGraphicsJava2DRuntime].getName();
@@ -37,7 +37,7 @@ object RuntimeMain {
 
     this.targetFrameCount = targetFrameCount;
     this.events = decode[List[List[EventWrapper]]](events).right.get.toVector
-    this.handlePre = new HandlePre(
+    this.sketchHandler = new SketchHandler(
       sketch,
       RuntimeMain.targetFrameCount,
       socketChannel,

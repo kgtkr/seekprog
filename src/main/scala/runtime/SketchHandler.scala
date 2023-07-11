@@ -14,7 +14,7 @@ import io.circe._, io.circe.generic.semiauto._, io.circe.parser._,
   io.circe.syntax._
 import scala.util.Try
 
-class HandlePre(
+class SketchHandler(
     applet: PApplet,
     targetFrameCount: Int,
     socketChannel: SocketChannel,
